@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Empresa {
+  id           Int          @id @default(autoincrement())
+  nombre       String
+  rut          String       @unique
+  email        String       @unique
+  password     String
+  trabajadores Trabajador[]
+
+  @@map("Empresa")
+}
+
+model Trabajador {
+  id            Int             @id @default(autoincrement())
+  nombre        String
+  apellido      String
+  empresaId     Int
+  rut           String?         @db.VarChar(50)
+  centroTrabajo String?
+  certificaciones Certificacion[]
+
+  empresa Empresa @relation(fields: [empresaId], references: [id])
+
+  @@map("Trabajador")
+}
+
+model Certificacion {
+  id                  Int        @id @default(autoincrement())
+  curso               String
+  fechaEmision        DateTime
+  fechaVencimiento    DateTime
+  trabajadorId        Int
+  codigoVerificacion  String?   @map("codigo_verificacion") @unique
+  trabajador          Trabajador @relation(fields: [trabajadorId], references: [id])
+
+  @@map("Certificacion")
+}

@@ -1,0 +1,53 @@
+{
+  "name": "my-cert-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000 --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint",
+    "predev": "kill-port 3000"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.1",
+    "@supabase/supabase-js": "^2.76.1",
+    "axios": "^1.12.1",
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.7.0",
+    "fontkit": "^2.0.4",
+    "formidable": "^3.5.4",
+    "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.2",
+    "jspdf-autotable": "^5.0.2",
+    "lucide-react": "^0.544.0",
+    "multer": "^2.0.2",
+    "next": "15.5.3",
+    "next-auth": "^4.24.11",
+    "nodemailer": "^6.10.1",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.17.2",
+    "prisma": "^6.16.1",
+    "qrcode": "^1.5.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-hook-form": "^7.62.0",
+    "stripe": "^18.5.0",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pdfkit": "^0.17.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.3",
+    "kill-port": "^2.0.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.13",
+    "typescript": "^5"
+  }
+}

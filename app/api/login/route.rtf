@@ -1,0 +1,41 @@
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import jwt from 'jsonwebtoken'
+
+const JWT_SECRET = process.env.JWT_SECRET || 'default_secret'
+
+export async function POST(req: Request) {
+  try {
+    const { email, password } = await req.json()
+
+    const empresa = await prisma.empresa.findUnique({ where: { email } })
+
+    if (!empresa) {
+      return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 })
+    }
+
+    if (empresa.password !== password) {
+      return NextResponse.json({ error: 'Contraseña incorrecta' }, { status: 401 })
+    }
+
+    const token = jwt.sign(
+      { empresaId: empresa.id, email: empresa.email },
+      JWT_SECRET,
+      { expiresIn: '1d' }
+    )
+
+    const response = NextResponse.json({ success: true, empresaId: empresa.id })
+    response.cookies.set('empresa_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24,
+      path: '/',
+    })
+
+    return response
+  } catch (err) {
+    console.error('❌ Error real en login:', err) // 👈 importante
+    return NextResponse.json({ error: 'Error en el servidor' }, { status: 500 })
+  }
+}
