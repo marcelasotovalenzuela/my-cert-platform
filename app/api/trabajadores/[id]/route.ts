@@ -1,12 +1,13 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 // 🔹 Actualizar un trabajador por ID
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const trabajadorId = Number(params.id)
+  const { id } = await params
+  const trabajadorId = Number(id)
 
   try {
     const body = await req.json()
@@ -36,10 +37,11 @@ export async function PUT(
 
 // 🔹 Obtener un trabajador por ID
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const trabajadorId = Number(params.id)
+  const { id } = await params
+  const trabajadorId = Number(id)
 
   try {
     const trabajador = await prisma.trabajador.findUnique({
