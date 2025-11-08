@@ -17,8 +17,11 @@ function generarCodigo(): string {
 }
 
 
-export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-    const { id } = await context.params
+export async function GET(
+  _req: NextRequest,
+  ctx: { params: Promise<{ id: string }> }
+) {
+  const { id } = await ctx.params
 
   const cert = await prisma.certificacion.findUnique({
     where: { id: Number(id) },
@@ -180,11 +183,15 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     font: fontRegular,
   })
 
-  const pdfBytes = await pdfDoc.save()
-  return new NextResponse(pdfBytes, {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename=diploma-${id}.pdf`,
-    },
-  })
+    const pdfBytes = await pdfDoc.save()
+    const blob = new Blob([pdfBytes], { type: "application/pdf" })
+
+    return new NextResponse(blob, {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename=diploma-${id}.pdf`,
+        "Cache-Control": "no-store",
+      },
+    })
+    
 }
