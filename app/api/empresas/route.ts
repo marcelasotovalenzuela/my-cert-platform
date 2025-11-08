@@ -1,8 +1,32 @@
 import nodemailer from "nodemailer";
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // ajusta si tu import es distinto
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-export async function GET(req: Request) {
+// Tipos mínimos (coinciden con tu select/include)
+type CertificacionDTO = {
+  id: number;
+  curso: string;
+  fechaEmision: string;
+  fechaVencimiento: string;
+};
+
+type TrabajadorDTO = {
+  id: number;
+  nombre: string;
+  apellido?: string | null;
+  centroTrabajo?: string | null;
+  certificaciones: CertificacionDTO[];
+};
+
+type EmpresaDTO = {
+  id: number;
+  nombre: string;
+  rut?: string | null;
+  email: string;
+  trabajadores: TrabajadorDTO[];
+};
+
+export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const idParam = searchParams.get("id");
@@ -19,61 +43,92 @@ export async function GET(req: Request) {
       );
     }
 
-    let empresa;
+    let empresaOut: EmpresaDTO | null = null;
 
     if (id) {
-      empresa = await prisma.empresa.findUnique({
+      const e = await prisma.empresa.findUnique({
         where: { id },
         include: {
           trabajadores: {
-            include: {
-              certificaciones: true,
-            },
-            orderBy: { id: 'asc' },
+            include: { certificaciones: true },
+            orderBy: { id: "asc" },
           },
         },
       });
+
+      if (e) {
+        empresaOut = {
+          id: e.id,
+          nombre: e.nombre,
+          rut: e.rut ?? null,
+          email: e.email,
+          trabajadores: (e.trabajadores || []).map((t) => ({
+            id: t.id,
+            nombre: t.nombre,
+            apellido: t.apellido ?? null,
+            centroTrabajo: t.centroTrabajo ?? null,
+            certificaciones: (t.certificaciones || []).map((c) => ({
+              id: c.id,
+              curso: c.curso,
+              fechaEmision: c.fechaEmision,
+              fechaVencimiento: c.fechaVencimiento,
+            })),
+          })),
+        };
+      }
     } else if (email) {
       // Búsqueda por email case-insensitive
-      empresa = await prisma.empresa.findFirst({
+      const e = await prisma.empresa.findFirst({
         where: { email: { equals: email, mode: "insensitive" } },
         include: {
           trabajadores: {
-            include: {
-              certificaciones: true,
-            },
-            orderBy: { id: 'asc' },
+            include: { certificaciones: true },
+            orderBy: { id: "asc" },
           },
         },
       });
+
+      if (e) {
+        empresaOut = {
+          id: e.id,
+          nombre: e.nombre,
+          rut: e.rut ?? null,
+          email: e.email,
+          trabajadores: (e.trabajadores || []).map((t) => ({
+            id: t.id,
+            nombre: t.nombre,
+            apellido: t.apellido ?? null,
+            centroTrabajo: t.centroTrabajo ?? null,
+            certificaciones: (t.certificaciones || []).map((c) => ({
+              id: c.id,
+              curso: c.curso,
+              fechaEmision: c.fechaEmision,
+              fechaVencimiento: c.fechaVencimiento,
+            })),
+          })),
+        };
+      }
     }
 
-    // Normaliza arreglos anidados para evitar undefined en el cliente
-    if (empresa && Array.isArray((empresa as any).trabajadores)) {
-      (empresa as any).trabajadores = (empresa as any).trabajadores.map((t: any) => ({
-        ...t,
-        certificaciones: Array.isArray(t.certificaciones) ? t.certificaciones : [],
-      }))
-    }
-
-    if (!empresa) {
+    if (!empresaOut) {
       return NextResponse.json(
         { ok: false, error: "Empresa no encontrada" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ ok: true, empresa }, { status: 200 });
-  } catch (e: any) {
-    console.error("❌ Error en GET /api/empresas:", e);
+    return NextResponse.json({ ok: true, empresa: empresaOut }, { status: 200 });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("❌ Error en GET /api/empresas:", msg);
     return NextResponse.json(
-      { ok: false, error: e?.message || String(e) },
+      { ok: false, error: msg },
       { status: 500 }
     );
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
@@ -81,7 +136,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "Acción no soportada" }, { status: 400 });
     }
 
-    const body = await req.json().catch(() => ({}));
+    type RecertBody = {
+      empresaId?: number;
+      empresaNombre?: string;
+      empresaEmail?: string;
+      trabajadorId: number;
+      trabajadorNombre: string;
+      curso: string;
+    };
+
+    const body = (await req.json().catch(() => ({}))) as Partial<RecertBody>;
     const {
       empresaId,
       empresaNombre,
@@ -89,7 +153,7 @@ export async function POST(req: Request) {
       trabajadorId,
       trabajadorNombre,
       curso,
-    } = body || {};
+    } = body;
 
     if (!trabajadorId || !trabajadorNombre || !curso) {
       return NextResponse.json({ ok: false, error: "Faltan datos obligatorios" }, { status: 400 });
@@ -147,8 +211,9 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ ok: true });
-  } catch (err: any) {
-    console.error("❌ Error POST /api/empresas?action=recertificar", err);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("❌ Error POST /api/empresas?action=recertificar", msg);
     return NextResponse.json({ ok: false, error: "Error al enviar correo" }, { status: 500 });
   }
 }

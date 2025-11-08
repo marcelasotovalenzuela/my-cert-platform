@@ -10,6 +10,11 @@ type ResultadoVerificacion = {
   centroTrabajo?: string | null
 }
 
+// Tipo mínimo de la respuesta esperada del API
+type ApiVerificacion =
+  | (ResultadoVerificacion & { error?: undefined })
+  | { error: string }
+
 export default function VerificarPage() {
   const [codigo, setCodigo] = useState("")
   const [resultado, setResultado] = useState<ResultadoVerificacion | null>(null)
@@ -25,23 +30,28 @@ export default function VerificarPage() {
     try {
       const codigoTrimmed = codigo.trim().toUpperCase()
       const res = await fetch(`/api/verificar/${encodeURIComponent(codigoTrimmed)}`)
-      const data = await res.json().catch(() => ({} as any))
+
+      // Evita `any` y maneja respuestas no-JSON
+      const contentType = res.headers.get("content-type") || ""
+      const data: ApiVerificacion = contentType.includes("application/json")
+        ? ((await res.json()) as ApiVerificacion)
+        : { error: await res.text() }
 
       if (!res.ok) {
         if (res.status === 404) {
           setError(`❌ Documento inválido: el código "${codigoTrimmed}" no existe o expiró.`)
         } else {
-          setError(data?.error || "Error en la verificación")
+          setError(("error" in data && data.error) || "Error en la verificación")
         }
         return
       }
 
       setResultado({
-        curso: data.curso,
-        trabajador: data.trabajador,
-        rut: data.rut,
-        fechaVencimiento: data.fechaVencimiento,
-        centroTrabajo: data.centroTrabajo ?? null,
+        curso: (data as ResultadoVerificacion).curso,
+        trabajador: (data as ResultadoVerificacion).trabajador,
+        rut: (data as ResultadoVerificacion).rut,
+        fechaVencimiento: (data as ResultadoVerificacion).fechaVencimiento,
+        centroTrabajo: (data as ResultadoVerificacion).centroTrabajo ?? null,
       })
     } catch {
       setError("⚠️ Error al verificar el documento. Inténtalo nuevamente.")

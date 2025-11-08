@@ -4,6 +4,39 @@ import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import CertificacionesTable from "./components/CertificacionesTable"
 
+// ===== Tipos mínimos para eliminar `any` sin cambiar lógica =====
+type CertificacionBase = {
+  id?: number
+  curso: string
+  fechaEmision?: string
+  fechaVencimiento: string
+}
+
+type Certificacion = CertificacionBase & {
+  trabajador: {
+    id: number
+    nombre: string
+    apellido?: string | null
+    centroTrabajo?: string | null
+  }
+}
+
+type Trabajador = {
+  id: number
+  nombre: string
+  apellido?: string | null
+  centroTrabajo?: string | null
+  certificaciones?: CertificacionBase[]
+}
+
+type Empresa = {
+  id: number
+  nombre: string
+  rut?: string | null
+  email?: string
+  trabajadores?: Trabajador[]
+}
+
 // 🔹 Días “seguros” (UTC) hasta la fecha de vencimiento
 function daysUntil(dateISO: string) {
   if (!dateISO) return Infinity;
@@ -31,7 +64,7 @@ function getCertStatus(fechaVencimiento: string) {
 }
 
 // 🔹 Stats globales
-function getDashboardStats(certificaciones: any[]) {
+function getDashboardStats(certificaciones: Certificacion[]) {
   let critico = 0,
     atencion = 0,
     vigente = 0
@@ -45,8 +78,8 @@ function getDashboardStats(certificaciones: any[]) {
 }
 
 export default function EmpresasPage() {
-  const [empresa, setEmpresa] = useState<any | null>(null)
-  const [certificaciones, setCertificaciones] = useState<any[]>([])
+  const [empresa, setEmpresa] = useState<Empresa | null>(null)
+  const [certificaciones, setCertificaciones] = useState<Certificacion[]>([])
   const [error, setError] = useState("")
   const [filter, setFilter] = useState<"criticas" | "atencion" | "vigentes" | "all">("all")
 
@@ -106,18 +139,18 @@ export default function EmpresasPage() {
           return
         }
 
-        const emp = data.empresa
+        const emp: Empresa = data.empresa
         setEmpresa(emp)
 
         // Aplanamos certificaciones con guardas
-        const listaCerts = (emp?.trabajadores ?? []).flatMap((t: any) =>
-          (t?.certificaciones ?? []).map((c: any) => ({
+        const listaCerts: Certificacion[] = (emp?.trabajadores ?? []).flatMap((t: Trabajador) =>
+          (t?.certificaciones ?? []).map((c: CertificacionBase) => ({
             ...c,
             trabajador: {
               id: t.id,
               nombre: t.nombre,
-              apellido: t.apellido,
-              centroTrabajo: t.centroTrabajo,
+              apellido: t.apellido ?? null,
+              centroTrabajo: t.centroTrabajo ?? null,
             },
           }))
         )

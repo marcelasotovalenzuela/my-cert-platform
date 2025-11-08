@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -8,7 +8,7 @@ const supabase = createClient(
 
 type Body = { email?: string; password?: string };
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => ({}))) as Body;
     const email = (body.email ?? "").trim().toLowerCase();
@@ -40,7 +40,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true, user: { id: data.id, email: data.email } }, { status: 200 });
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e?.message || String(e) }, { status: 500 });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }

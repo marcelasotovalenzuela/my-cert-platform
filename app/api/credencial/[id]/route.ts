@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { PDFDocument, rgb } from "pdf-lib"
 import QRCode from "qrcode"
 import fs from "fs"
 import path from "path"
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const { id } = params
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params
 
   if (!id) {
     return NextResponse.json({ error: "ID requerido" }, { status: 400 })

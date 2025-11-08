@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowUpDown, Eye, FileText, RefreshCcw } from 'lucide-react'
+import { ArrowUpDown, FileText, RefreshCcw } from 'lucide-react'
 
 type Certificacion = {
   id: number
@@ -11,7 +11,7 @@ type Certificacion = {
     id: number
     nombre: string
     apellido: string
-    centroTrabajo: string 
+    centroTrabajo: string
   }
 }
 
@@ -100,7 +100,7 @@ export default function CertificacionesTable({
 
     if (ordenCampo) {
       lista = [...lista].sort((a, b) => {
-        let valA: any, valB: any
+        let valA: string | number | undefined, valB: string | number | undefined
         if (ordenCampo === 'curso') {
           valA = a.curso
           valB = b.curso
@@ -128,48 +128,48 @@ export default function CertificacionesTable({
     return lista
   }, [certificaciones, filtroNombre, filtroCurso, filtroCT, filtroEstado, ordenCampo, ordenAsc, filter])
 
-    // Exportar PDF
-    async function exportarPDF() {
-      try {
-        setExportando(true)
-        const res = await fetch('/api/export-pdf', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            empresaId,
-            empresaNombre: empresaNombre || "N/A",
-            empresaRut: empresaRut || "N/A",
-            certificaciones: certsFiltradas.map(c => ({
-              id: c.id,
-              curso: c.curso,
-              fechaVencimiento: new Date(c.fechaVencimiento).toISOString(),
-              trabajador: {
-                id: c.trabajador.id,
-                nombre: c.trabajador.nombre,
-                apellido: c.trabajador.apellido,
-                centroTrabajo: c.trabajador.centroTrabajo,
-              },
-            })),
-          }),
-        })
+  // Exportar PDF
+  async function exportarPDF() {
+    try {
+      setExportando(true)
+      const res = await fetch('/api/export-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          empresaId,
+          empresaNombre: empresaNombre || "N/A",
+          empresaRut: empresaRut || "N/A",
+          certificaciones: certsFiltradas.map(c => ({
+            id: c.id,
+            curso: c.curso,
+            fechaVencimiento: new Date(c.fechaVencimiento).toISOString(),
+            trabajador: {
+              id: c.trabajador.id,
+              nombre: c.trabajador.nombre,
+              apellido: c.trabajador.apellido,
+              centroTrabajo: c.trabajador.centroTrabajo,
+            },
+          })),
+        }),
+      })
 
-        if (!res.ok) throw new Error('Error al generar PDF')
-        const blob = await res.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `certificaciones_${empresaNombre || 'empresa'}_${new Date().toISOString().slice(0, 10)}.pdf`
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-        window.URL.revokeObjectURL(url)
-      } catch (err) {
-        console.error(err)
-        alert('❌ No se pudo exportar el PDF')
-      } finally {
-        setExportando(false)
-      }
+      if (!res.ok) throw new Error('Error al generar PDF')
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `certificaciones_${empresaNombre || 'empresa'}_${new Date().toISOString().slice(0, 10)}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error(err)
+      alert('❌ No se pudo exportar el PDF')
+    } finally {
+      setExportando(false)
     }
+  }
 
   function renderSortButton(campo: string) {
     return (

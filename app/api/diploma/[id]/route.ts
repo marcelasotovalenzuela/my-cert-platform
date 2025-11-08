@@ -1,6 +1,7 @@
 export const runtime = 'nodejs'
 
-import { NextResponse } from "next/server"
+
+import { NextRequest, NextResponse } from "next/server"
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import fs from "fs"
 import path from "path"
@@ -15,11 +16,9 @@ function generarCodigo(): string {
   return `VERIF-${result}`
 }
 
-export async function GET(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id } = await context.params
+
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+    const { id } = await context.params
 
   const cert = await prisma.certificacion.findUnique({
     where: { id: Number(id) },

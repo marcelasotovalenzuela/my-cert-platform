@@ -2,6 +2,21 @@
 
 import { useState } from 'react'
 
+// Tipos mínimos para eliminar `any` sin alterar la lógica
+type Trabajador = {
+  id: number
+  nombre: string
+  apellido?: string
+  centroTrabajo?: string | null
+}
+
+type Certificacion = {
+  id: number
+  curso: string
+  fechaVencimiento: string
+  trabajador: Trabajador
+}
+
 // 🔹 Función para calcular estado de certificación
 function getCertStatus(fechaVencimiento: string) {
   const hoy = new Date()
@@ -16,9 +31,9 @@ function getCertStatus(fechaVencimiento: string) {
 }
 
 // 🔹 Función para obtener stats
-function getDashboardStats(certificaciones: any[]) {
+function getDashboardStats(certificaciones: Certificacion[]) {
   let critico = 0, atencion = 0, vigente = 0
-  certificaciones.forEach((cert) => {
+  certificaciones.forEach((cert: Certificacion) => {
     const status = getCertStatus(cert.fechaVencimiento)
     if (status.label === 'Crítico') critico++
     else if (status.label === 'Atención') atencion++
@@ -31,7 +46,7 @@ export default function CertificacionesList({
   certificaciones,
   onRecertificar,
 }: {
-  certificaciones: any[]
+  certificaciones: Certificacion[]
   onRecertificar: (trabajadorId: number, nombre: string) => void
 }) {
   const [filtroNombre, setFiltroNombre] = useState('')
@@ -39,11 +54,11 @@ export default function CertificacionesList({
   const [orden, setOrden] = useState('')
 
   function getCertificacionesFiltradas() {
-    let lista = [...certificaciones]
+    let lista: Certificacion[] = [...certificaciones]
 
     if (filtroNombre) {
       lista = lista.filter((c) =>
-        `${c.trabajador.nombre} ${c.trabajador.apellido}`
+        `${c.trabajador.nombre} ${c.trabajador.apellido ?? ''}`
           .toLowerCase()
           .includes(filtroNombre.toLowerCase())
       )
@@ -134,7 +149,7 @@ export default function CertificacionesList({
           <p className="text-gray-500">No hay certificaciones que coincidan</p>
         ) : (
           <ul className="list-disc list-inside">
-            {getCertificacionesFiltradas().map((cert: any) => {
+            {getCertificacionesFiltradas().map((cert: Certificacion) => {
               const status = getCertStatus(cert.fechaVencimiento)
               return (
                 <li key={cert.id} className="mb-4">
@@ -144,7 +159,7 @@ export default function CertificacionesList({
                   </span>
                   <br />
                   <span className="text-gray-600">
-                    👤 {cert.trabajador.nombre} {cert.trabajador.apellido} — 🏢{' '}
+                    👤 {cert.trabajador.nombre} {cert.trabajador.apellido ?? ''} — 🏢{' '}
                     {cert.trabajador.centroTrabajo || 'Sin centro asignado'}
                   </span>
                   <br />
