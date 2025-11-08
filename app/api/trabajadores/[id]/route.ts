@@ -1,12 +1,13 @@
+// app/api/trabajadores/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 // 🔹 Actualizar un trabajador por ID
 export async function PUT(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  ctx: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
+  const { id } = await ctx.params
   const trabajadorId = Number(id)
 
   try {
@@ -38,9 +39,9 @@ export async function PUT(
 // 🔹 Obtener un trabajador por ID
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  ctx: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
+  const { id } = await ctx.params
   const trabajadorId = Number(id)
 
   try {
