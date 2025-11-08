@@ -1,10 +1,25 @@
-// components/EmpresaHeader.tsx
-export default function EmpresaHeader({ empresa }: { empresa: any }) {
+'use client'
+
+type EmpresaHeaderProps = {
+  nombre: string
+  rut?: string | null
+  email?: string | null
+  onExportPdf?: () => void
+}
+
+export default function EmpresaHeader({ nombre, rut, email, onExportPdf }: EmpresaHeaderProps) {
   return (
-    <div className="border rounded-lg p-4 shadow mb-6">
-      <h2 className="text-xl font-semibold">{empresa.nombre}</h2>
-      <p className="text-gray-600">RUT: {empresa.rut}</p>
-      <p className="text-gray-600">Email: {empresa.email}</p>
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h2 className="text-2xl font-bold">{nombre}</h2>
+        <p className="text-gray-600">RUT: {rut || '—'} · {email || 'sin correo'}</p>
+      </div>
+      <button
+        onClick={onExportPdf}
+        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        📄 Exportar PDF
+      </button>
     </div>
   )
 }

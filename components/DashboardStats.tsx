@@ -1,28 +1,16 @@
-// components/DashboardStats.tsx
 'use client'
 
-// Tipos mínimos para eliminar `any` sin alterar la lógica
-type Certificacion = {
-  fechaVencimiento: string
-}
+// Tipos mínimos
+type Certificacion = { fechaVencimiento: string }
+type Trabajador = { certificaciones: Certificacion[] }
+type Empresa = { trabajadores: Trabajador[] }
 
-type Trabajador = {
-  certificaciones: Certificacion[]
-}
-
-type Empresa = {
-  trabajadores: Trabajador[]
-}
-
-function getCertStatus(
-  fechaVencimiento: string
-): { label: 'Crítico' | 'Atención' | 'Vigente' } {
+function getCertStatus(fechaVencimiento: string): {
+  label: 'Crítico' | 'Atención' | 'Vigente'
+} {
   const hoy = new Date()
-  const vencimiento = new Date(fechaVencimiento)
-  const diffMeses =
-    (vencimiento.getFullYear() - hoy.getFullYear()) * 12 +
-    (vencimiento.getMonth() - hoy.getMonth())
-
+  const v = new Date(fechaVencimiento)
+  const diffMeses = (v.getFullYear() - hoy.getFullYear()) * 12 + (v.getMonth() - hoy.getMonth())
   if (diffMeses < 1) return { label: 'Crítico' }
   if (diffMeses < 3) return { label: 'Atención' }
   return { label: 'Vigente' }
@@ -31,9 +19,7 @@ function getCertStatus(
 function getDashboardStats(empresa: Empresa | null | undefined) {
   if (!empresa) return { critico: 0, atencion: 0, vigente: 0, trabajadores: 0 }
 
-  let critico = 0,
-    atencion = 0,
-    vigente = 0
+  let critico = 0, atencion = 0, vigente = 0
 
   empresa.trabajadores.forEach((trab: Trabajador) => {
     trab.certificaciones.forEach((cert: Certificacion) => {
@@ -44,21 +30,11 @@ function getDashboardStats(empresa: Empresa | null | undefined) {
     })
   })
 
-  return {
-    critico,
-    atencion,
-    vigente,
-    trabajadores: empresa.trabajadores.length,
-  }
+  return { critico, atencion, vigente, trabajadores: empresa.trabajadores.length }
 }
 
-export default function DashboardStats({
-  empresa,
-}: {
-  empresa: Empresa | null | undefined
-}) {
+export default function DashboardStats({ empresa }: { empresa: Empresa | null }) {
   const stats = getDashboardStats(empresa)
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-8">
       <div className="p-4 rounded-lg shadow bg-blue-100 text-blue-700 font-bold text-center">
