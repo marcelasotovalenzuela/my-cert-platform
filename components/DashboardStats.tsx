@@ -1,7 +1,22 @@
 // components/DashboardStats.tsx
 'use client'
 
-function getCertStatus(fechaVencimiento: string) {
+// Tipos mínimos para eliminar `any` sin alterar la lógica
+type Certificacion = {
+  fechaVencimiento: string
+}
+
+type Trabajador = {
+  certificaciones: Certificacion[]
+}
+
+type Empresa = {
+  trabajadores: Trabajador[]
+}
+
+function getCertStatus(
+  fechaVencimiento: string
+): { label: 'Crítico' | 'Atención' | 'Vigente' } {
   const hoy = new Date()
   const vencimiento = new Date(fechaVencimiento)
   const diffMeses =
@@ -13,15 +28,15 @@ function getCertStatus(fechaVencimiento: string) {
   return { label: 'Vigente' }
 }
 
-function getDashboardStats(empresa: any) {
+function getDashboardStats(empresa: Empresa | null | undefined) {
   if (!empresa) return { critico: 0, atencion: 0, vigente: 0, trabajadores: 0 }
 
   let critico = 0,
     atencion = 0,
     vigente = 0
 
-  empresa.trabajadores.forEach((trab: any) => {
-    trab.certificaciones.forEach((cert: any) => {
+  empresa.trabajadores.forEach((trab: Trabajador) => {
+    trab.certificaciones.forEach((cert: Certificacion) => {
       const status = getCertStatus(cert.fechaVencimiento)
       if (status.label === 'Crítico') critico++
       else if (status.label === 'Atención') atencion++
@@ -37,7 +52,11 @@ function getDashboardStats(empresa: any) {
   }
 }
 
-export default function DashboardStats({ empresa }: { empresa: any }) {
+export default function DashboardStats({
+  empresa,
+}: {
+  empresa: Empresa | null | undefined
+}) {
   const stats = getDashboardStats(empresa)
 
   return (
