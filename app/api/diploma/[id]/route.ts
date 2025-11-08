@@ -184,14 +184,13 @@ export async function GET(
   })
 
     const pdfBytes = await pdfDoc.save()
-    const blob = new Blob([pdfBytes], { type: "application/pdf" })
+    // ✅ En Node, usa Buffer para evitar el error de tipos con Blob
+    const pdfBuffer = Buffer.from(pdfBytes)
 
-    return new NextResponse(blob, {
+    return new NextResponse(pdfBuffer, {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename=diploma-${id}.pdf`,
-        "Cache-Control": "no-store",
       },
-    })
-    
+    })    
 }
