@@ -7,3 +7,35 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .DS_Store
+
+# === Node & Environment ===
+node_modules
+.npm
+.DS_Store
+
+# === Next.js build output ===
+.next
+out
+dist
+
+# === Env files (NEVER commit secrets) ===
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# === Logs ===
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Prisma ===
+prisma/dev.db
+prisma/dev.sqlite
+prisma/migrations/.DS_Store
+
+# === Other caches ===
+.vercel
+coverage
