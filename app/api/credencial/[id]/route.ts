@@ -1,15 +1,26 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { PDFDocument, rgb } from "pdf-lib"
 import QRCode from "qrcode"
 import fs from "fs"
 import path from "path"
 
-export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+// Runtime & caching hints for Vercel/Next.js
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+// Preferred public site URL for QR links (fallback to production domain)
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.ryltraining.cl";
+
+export async function GET(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   const { id } = await context.params
 
   if (!id) {
-    return NextResponse.json({ error: "ID requerido" }, { status: 400 })
+    return new Response(JSON.stringify({ error: "ID requerido" }), { status: 400, headers: { "Content-Type": "application/json" } })
   }
 
   try {
@@ -22,7 +33,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     })
 
     if (!trabajador || trabajador.certificaciones.length === 0) {
-      return NextResponse.json({ error: "Trabajador o certificación no encontrada" }, { status: 404 })
+      return new Response(JSON.stringify({ error: "Trabajador o certificación no encontrada" }), { status: 404, headers: { "Content-Type": "application/json" } })
     }
 
     const cert = trabajador.certificaciones[0]
@@ -57,7 +68,6 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       borderColor,
       borderWidth: 2,
       color: rgb(1, 1, 1),
-      borderRadius: 24,
     })
 
     // Logo
@@ -174,7 +184,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     })
 
     // QR centrado
-    const qrData = await QRCode.toDataURL(`https://www.ryltraining.cl/verificar/${cert.codigoVerificacion}`)
+    const qrData = await QRCode.toDataURL(`${SITE_URL}/verificar/${cert.codigoVerificacion}`)
     const qrBytes = Buffer.from(qrData.split(",")[1], "base64")
     const qrImg = await pdfDoc.embedPng(qrBytes)
     const qrDims = qrImg.scale(1.5)
@@ -218,15 +228,19 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     // ================================
     // EXPORTAR
     // ================================
-    const pdfBytes = await pdfDoc.save()
-    return new NextResponse(pdfBytes, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename=credencial-${id}.pdf`,
-      },
-    })
+      const pdfBytes = await pdfDoc.save()
+      // ✅ Convertir a Buffer (BodyInit válido para Response)
+      const pdfBuffer = Buffer.from(pdfBytes)
+
+      return new Response(pdfBuffer, {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `inline; filename=credencial-${id}.pdf`,
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      })
   } catch (error) {
     console.error("Error generando credencial:", error)
-    return NextResponse.json({ error: "Error generando credencial" }, { status: 500 })
+    return new Response(JSON.stringify({ error: "Error generando credencial" }), { status: 500, headers: { "Content-Type": "application/json" } })
   }
 }

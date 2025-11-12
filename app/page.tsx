@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import Link from "next/link";
 
 export default function HomePage() {
@@ -8,7 +10,7 @@ export default function HomePage() {
       {/* 🔹 Franja superior */}
       <header className="w-full bg-white shadow-md flex items-center justify-between px-6 py-3 z-20">
         {/* Logo aumentado en 20% */}
-        <img src="/logo.png" alt="R&L Training Logo" className="h-16" />
+        <img src="/logo.png" alt="R&L Training Logo" className="h-16" loading="lazy" decoding="async" />
 
         {/* Botones a la derecha */}
         <div className="flex gap-4">
@@ -57,6 +59,8 @@ export default function HomePage() {
               src="/servicio-inspecciones.jpg"
               alt="Inspecciones"
               className="w-full h-72 object-cover"
+              loading="lazy"
+              decoding="async"
             />
             <div className="p-6">
               <h3 className="text-xl font-semibold mb-2">Inspecciones</h3>
@@ -91,6 +95,8 @@ export default function HomePage() {
               src="/servicio-asesoria.jpg"
               alt="Asesoría Técnica"
               className="w-full h-72 object-cover"
+              loading="lazy"
+              decoding="async"
             />
             <div className="p-6">
               <h3 className="text-xl font-semibold mb-2">Asesoría Técnica</h3>
@@ -109,7 +115,7 @@ export default function HomePage() {
             <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-12 text-center">
               {/* Email */}
               <div className="p-6 bg-white rounded-lg shadow">
-                <a href="mailto:contacto@ryltraining.cl" className="block text-blue-600 text-5xl mb-4 hover:scale-110 transition">
+                <a href="mailto:contacto@ryltraining.cl" aria-label="Enviar correo a contacto@ryltraining.cl" className="block text-blue-600 text-5xl mb-4 hover:scale-110 transition">
                   ✉️
                 </a>
                 <h3 className="text-xl font-bold mb-2">Email</h3>
@@ -118,7 +124,7 @@ export default function HomePage() {
 
               {/* Teléfono */}
               <div className="p-6 bg-white rounded-lg shadow">
-                <a href="tel:+56941423741" className="block text-green-600 text-5xl mb-4 hover:scale-110 transition">
+                <a href="tel:+56941423741" aria-label="Llamar al teléfono +56 9 4142 3741" className="block text-green-600 text-5xl mb-4 hover:scale-110 transition">
                   📞
                 </a>
                 <h3 className="text-xl font-bold mb-2">Teléfono</h3>

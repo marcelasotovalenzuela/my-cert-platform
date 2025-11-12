@@ -1,8 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import CertificacionesTable from "./components/CertificacionesTable"
+
+// Tipos derivados del prop real del componente para evitar colisiones
+type TableCertArray = Parameters<typeof CertificacionesTable>[0]["certificaciones"];
+type TableCert = TableCertArray extends (infer U)[] ? U : never;
 
 // ===== Tipos mínimos para eliminar `any` sin cambiar lógica =====
 type CertificacionBase = {
@@ -37,6 +41,13 @@ type Empresa = {
   trabajadores?: Trabajador[]
 }
 
+// 🔹 Normaliza fechas a ISO string
+function toISO(v: unknown): string {
+  if (typeof v === "string") return v
+  if (v instanceof Date) return v.toISOString()
+  return ""
+}
+
 // 🔹 Días “seguros” (UTC) hasta la fecha de vencimiento
 function daysUntil(dateISO: string) {
   if (!dateISO) return Infinity;
@@ -69,7 +80,12 @@ function getDashboardStats(certificaciones: Certificacion[]) {
     atencion = 0,
     vigente = 0
   certificaciones.forEach((cert) => {
-    const status = getCertStatus(cert.fechaVencimiento)
+    const fv = cert.fechaVencimiento
+    if (!fv) {
+      vigente++
+      return
+    }
+    const status = getCertStatus(fv)
     if (status.label === "criticas") critico++
     else if (status.label === "atencion") atencion++
     else vigente++
@@ -77,7 +93,7 @@ function getDashboardStats(certificaciones: Certificacion[]) {
   return { critico, atencion, vigente, total: certificaciones.length }
 }
 
-export default function EmpresasPage() {
+function EmpresasPageInner() {
   const [empresa, setEmpresa] = useState<Empresa | null>(null)
   const [certificaciones, setCertificaciones] = useState<Certificacion[]>([])
   const [error, setError] = useState("")
@@ -91,6 +107,7 @@ export default function EmpresasPage() {
 
   const [empresaIdNum, setEmpresaIdNum] = useState<number | null>(null)
   const [empresaEmail, setEmpresaEmail] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const idNum = empresaId && /^\d+$/.test(empresaId) ? Number(empresaId) : null
@@ -113,13 +130,16 @@ export default function EmpresasPage() {
 
   // 🔹 Fetch empresa y certificaciones
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchEmpresa() {
+      setLoading(true)
       setError("")
       setEmpresa(null)
       setCertificaciones([])
 
       if (!empresaIdNum && !empresaEmail) {
         // Sin identificador aún: no llamamos a la API
+        setLoading(false)
         return
       }
 
@@ -130,6 +150,7 @@ export default function EmpresasPage() {
       try {
         const res = await fetch(`/api/empresas?${qs}`, {
           headers: { Accept: "application/json" },
+          signal: controller.signal,
         })
         const ct = res.headers.get("content-type") || ""
         const data = ct.includes("application/json") ? await res.json() : { ok: false, error: await res.text() }
@@ -158,36 +179,63 @@ export default function EmpresasPage() {
       } catch (err) {
         console.error(err)
         setError("Error de conexión con el servidor")
+      } finally {
+        setLoading(false)
       }
     }
     fetchEmpresa()
+    return () => controller.abort()
   }, [empresaIdNum, empresaEmail])
 
-  async function solicitarRecertificacion(trabajadorId: number, nombre: string) {
-    const res = await fetch("/api/recertificaciones", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        trabajadorId,
-        nombre: `Recertificación de ${nombre}`,
-        mesesValidez: 12,
-      }),
-    })
-    if (res.ok) {
+  const solicitarRecertificacion = useCallback(async (trabajadorId: number, nombre: string) => {
+    try {
+      const res = await fetch("/api/recertificaciones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          trabajadorId,
+          nombre: `Recertificación de ${nombre}`,
+        }),
+      })
+      if (!res.ok) throw new Error(await res.text())
       alert("✅ Recertificación solicitada con éxito")
-    } else {
+    } catch (e) {
+      console.error(e)
       alert("❌ Error al solicitar la recertificación")
     }
-  }
+  }, [])
+
+  const certificacionesForTable: TableCertArray = useMemo(() => {
+    return (certificaciones ?? []).map((c): TableCert => {
+      const fechaEmisionISO = toISO((c as { fechaEmision?: unknown }).fechaEmision)
+      const fechaVencimientoISO = toISO((c as { fechaVencimiento?: unknown }).fechaVencimiento)
+
+      return {
+        id: Number((c as { id?: unknown }).id ?? 0),
+        curso: String((c as { curso?: unknown }).curso ?? ""),
+        fechaEmision: fechaEmisionISO,
+        fechaVencimiento: fechaVencimientoISO,
+        trabajador: {
+          id: Number((c as { trabajador: { id: number } }).trabajador.id),
+          nombre: String((c as { trabajador: { nombre: string } }).trabajador.nombre ?? ""),
+          apellido: ((c as { trabajador: { apellido?: string | null } }).trabajador.apellido) ?? "",
+          centroTrabajo: ((c as { trabajador: { centroTrabajo?: string | null } }).trabajador.centroTrabajo) ?? null,
+        },
+      } as TableCert
+    })
+  }, [certificaciones])
 
   return (
     <main className="p-6">
       <h1 className="text-2xl font-bold mb-6">Panel de Empresa</h1>
 
       {error && <p className="text-red-600">{error}</p>}
+      <div className="sr-only" aria-live="polite">{loading ? "Cargando" : "Listo"}</div>
 
-      {!empresa ? (
-        <p className="text-gray-500">Cargando datos de la empresa...</p>
+      {loading && !empresa ? (
+        <p className="text-gray-500" aria-live="polite">Cargando datos de la empresa...</p>
+      ) : !empresa ? (
+        <p className="text-gray-500">Selecciona una empresa para ver sus datos.</p>
       ) : (
         <>
           {/* Datos de la empresa */}
@@ -247,7 +295,7 @@ export default function EmpresasPage() {
 
           {/* Tabla de certificaciones */}
           <CertificacionesTable
-            certificaciones={certificaciones}
+            certificaciones={certificacionesForTable}
             empresaId={empresa?.id ?? empresaIdNum ?? 0}
             empresaNombre={empresa?.nombre ?? ""}
             empresaRut={empresa?.rut ?? ""}
@@ -258,4 +306,12 @@ export default function EmpresasPage() {
       )}
     </main>
   )
+}
+
+export default function EmpresasPage() {
+  return (
+    <Suspense fallback={<main className="p-6"><p className="text-gray-500">Cargando panel...</p></main>}>
+      <EmpresasPageInner />
+    </Suspense>
+  );
 }

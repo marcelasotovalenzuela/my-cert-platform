@@ -241,7 +241,14 @@ export async function POST(req: NextRequest) {
     const fechaNombre = new Date().toISOString().slice(0,10);
     const safeEmpresa = String(empresaNombre || 'empresa').replace(/[^a-zA-Z0-9-_]+/g, '-');
     const filename = `certificaciones_${safeEmpresa}_${fechaNombre}.pdf`;
-    return new Response(pdfBytes, {
+
+    // Convert Uint8Array -> ArrayBuffer to satisfy BodyInit in Next Response
+    const ab = pdfBytes.buffer.slice(
+      pdfBytes.byteOffset,
+      pdfBytes.byteOffset + pdfBytes.byteLength
+    ) as ArrayBuffer;
+
+    return new Response(ab, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}"`,

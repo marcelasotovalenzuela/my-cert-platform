@@ -2,6 +2,16 @@ import nodemailer from "nodemailer";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// Normalizador para fechas (evita `any` y convierte Date -> ISO string)
+function toCertDTO(c: { id: number; curso: string; fechaEmision: string | Date; fechaVencimiento: string | Date }) {
+  return {
+    id: c.id,
+    curso: c.curso,
+    fechaEmision: typeof c.fechaEmision === "string" ? c.fechaEmision : c.fechaEmision.toISOString(),
+    fechaVencimiento: typeof c.fechaVencimiento === "string" ? c.fechaVencimiento : c.fechaVencimiento.toISOString(),
+  };
+}
+
 // Tipos mínimos (coinciden con tu select/include)
 type CertificacionDTO = {
   id: number;
@@ -62,17 +72,18 @@ export async function GET(req: NextRequest) {
           nombre: e.nombre,
           rut: e.rut ?? null,
           email: e.email,
-          trabajadores: (e.trabajadores || []).map((t) => ({
+          trabajadores: (e.trabajadores ?? []).map((t: {
+            id: number;
+            nombre: string;
+            apellido: string | null;
+            centroTrabajo: string | null;
+            certificaciones: { id: number; curso: string; fechaEmision: string | Date; fechaVencimiento: string | Date }[];
+          }) => ({
             id: t.id,
             nombre: t.nombre,
             apellido: t.apellido ?? null,
             centroTrabajo: t.centroTrabajo ?? null,
-            certificaciones: (t.certificaciones || []).map((c) => ({
-              id: c.id,
-              curso: c.curso,
-              fechaEmision: c.fechaEmision,
-              fechaVencimiento: c.fechaVencimiento,
-            })),
+            certificaciones: (t.certificaciones ?? []).map(toCertDTO),
           })),
         };
       }
@@ -94,17 +105,18 @@ export async function GET(req: NextRequest) {
           nombre: e.nombre,
           rut: e.rut ?? null,
           email: e.email,
-          trabajadores: (e.trabajadores || []).map((t) => ({
+          trabajadores: (e.trabajadores ?? []).map((t: {
+            id: number;
+            nombre: string;
+            apellido: string | null;
+            centroTrabajo: string | null;
+            certificaciones: { id: number; curso: string; fechaEmision: string | Date; fechaVencimiento: string | Date }[];
+          }) => ({
             id: t.id,
             nombre: t.nombre,
             apellido: t.apellido ?? null,
             centroTrabajo: t.centroTrabajo ?? null,
-            certificaciones: (t.certificaciones || []).map((c) => ({
-              id: c.id,
-              curso: c.curso,
-              fechaEmision: c.fechaEmision,
-              fechaVencimiento: c.fechaVencimiento,
-            })),
+            certificaciones: (t.certificaciones ?? []).map(toCertDTO),
           })),
         };
       }

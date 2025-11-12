@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 
 type ResultadoVerificacion = {
   curso: string
@@ -63,7 +64,14 @@ export default function VerificarPage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-6">
       <div className="mb-8">
-        <img src="/logo.png" alt="R&L Training Logo" className="h-20 mx-auto" />
+        <Image
+          src="/logo.png"
+          alt="R&L Training Logo"
+          width={160}
+          height={80}
+          className="mx-auto h-20 w-auto"
+          priority
+        />
       </div>
 
       <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
