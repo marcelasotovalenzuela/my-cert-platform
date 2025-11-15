@@ -26,14 +26,44 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { nombre, apellido, empresaId, centroTrabajo } = await req.json()
+    const { nombre, apellido, rut, empresaId, centroTrabajo } = await req.json();
+
+    // Validaciones básicas para evitar registros incompletos
+    if (!nombre || !apellido || !rut || !empresaId) {
+      return NextResponse.json(
+        {
+          error:
+            'Faltan campos requeridos: nombre, apellido, rut y empresaId son obligatorios',
+        },
+        { status: 400 }
+      );
+    }
+
+    const empresaIdNumber = Number(empresaId);
+    if (Number.isNaN(empresaIdNumber)) {
+      return NextResponse.json(
+        { error: 'empresaId debe ser un número válido' },
+        { status: 400 }
+      );
+    }
+
     const nuevo = await prisma.trabajador.create({
-      data: { nombre, apellido, empresaId: Number(empresaId), centroTrabajo },
-    })
-    return NextResponse.json(nuevo)
+      data: {
+        nombre,
+        apellido,
+        rut,
+        empresaId: empresaIdNumber,
+        centroTrabajo,
+      },
+    });
+
+    return NextResponse.json(nuevo, { status: 201 });
   } catch (err) {
-    console.error('❌ Error en POST /api/trabajadores:', err)
-    return NextResponse.json({ error: 'Error al crear trabajador' }, { status: 500 })
+    console.error('❌ Error en POST /api/trabajadores:', err);
+    return NextResponse.json(
+      { error: 'Error al crear trabajador' },
+      { status: 500 }
+    );
   }
 }
 
