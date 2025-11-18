@@ -32,9 +32,15 @@ export async function GET(
       },
     })
 
-    if (!trabajador || trabajador.certificaciones.length === 0) {
-      return new Response(JSON.stringify({ error: "Trabajador o certificación no encontrada" }), { status: 404, headers: { "Content-Type": "application/json" } })
-    }
+      if (!trabajador || trabajador.certificaciones.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "Trabajador o certificación no encontrada" }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+      }
 
     const cert = trabajador.certificaciones[0]
 
@@ -241,6 +247,12 @@ export async function GET(
       })
   } catch (error) {
     console.error("Error generando credencial:", error)
-    return new Response(JSON.stringify({ error: "Error generando credencial" }), { status: 500, headers: { "Content-Type": "application/json" } })
+    return new Response(
+      JSON.stringify({ error: "Error generando credencial" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    )
   }
 }

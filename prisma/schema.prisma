@@ -15,6 +15,8 @@ model Empresa {
   password     String
   trabajadores Trabajador[]
 
+  createdAt    DateTime     @default(now())
+
   @@map("Empresa")
 }
 

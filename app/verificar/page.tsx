@@ -62,7 +62,7 @@ export default function VerificarPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-6">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-6">
       <div className="mb-8">
         <Image
           src="/logo.png"
@@ -74,10 +74,13 @@ export default function VerificarPage() {
         />
       </div>
 
-      <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
-        <h1 className="text-2xl font-bold text-center text-blue-700 mb-6">
-          Verificar Documento
+      <div className="bg-white shadow-xl rounded-2xl p-8 max-w-lg w-full border border-slate-200">
+        <h1 className="text-2xl font-semibold text-center text-blue-900 mb-2">
+          Verificar documento
         </h1>
+        <p className="text-sm text-center text-slate-500 mb-6">
+          Ingresa el código único del diploma o credencial para validar su vigencia.
+        </p>
 
         <form onSubmit={handleVerificar} className="space-y-4">
           <input
@@ -85,13 +88,13 @@ export default function VerificarPage() {
             value={codigo}
             onChange={(e) => setCodigo(e.target.value)}
             placeholder="Ingresa el código de verificación (ej: VERIF-AB12CD34)"
-            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 rounded-lg border border-blue-300 bg-white placeholder-slate-500 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition shadow-sm"
           >
             {loading ? "Verificando..." : "Verificar"}
           </button>
@@ -104,11 +107,12 @@ export default function VerificarPage() {
         )}
 
         {resultado && (
-          <div className="mt-6">
-            <h2 className="text-xl font-semibold text-center text-green-700 mb-4">
-              ✅ Documento válido
+          <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50/80 p-4">
+            <h2 className="text-lg font-semibold text-emerald-800 flex items-center gap-2 mb-3">
+              <span>Documento válido</span>
+              <span className="text-emerald-500">✔</span>
             </h2>
-            <div className="text-gray-800 space-y-2 text-left">
+            <div className="text-gray-800 space-y-2 text-sm">
               <p><span className="font-semibold">A nombre de:</span> {resultado.trabajador}</p>
               <p><span className="font-semibold">RUT:</span> {resultado.rut}</p>
               {resultado.centroTrabajo && (
@@ -122,6 +126,16 @@ export default function VerificarPage() {
             </div>
           </div>
         )}
+
+        <p className="mt-6 text-xs text-center text-slate-400">
+          ¿Tienes dudas sobre este documento?{" "}
+          <a
+            href="mailto:contacto@ryltraining.cl"
+            className="text-blue-600 hover:underline"
+          >
+            contacto@ryltraining.cl
+          </a>
+        </p>
       </div>
     </main>
   )

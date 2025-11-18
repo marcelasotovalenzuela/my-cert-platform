@@ -43,17 +43,17 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex items-center justify-center min-h-screen bg-blue-700">
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-lg shadow-lg w-96 border-t-4 border-yellow-400"
+        className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md border border-slate-200"
       >
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <img src="/logo.png" alt="Logo RYL Training" className="h-16" />
         </div>
 
-        <h1 className="text-2xl font-bold text-center text-blue-700 mb-6">
+        <h1 className="text-xl font-semibold text-slate-800 text-center mb-6">
           Ingreso Empresas
         </h1>
 
@@ -66,7 +66,7 @@ export default function LoginPage() {
           placeholder="Correo electrónico"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-3 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 mb-4 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
         />
 
@@ -75,16 +75,19 @@ export default function LoginPage() {
           placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-3 border rounded mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-lg border border-slate-300 bg-slate-50 p-3 mb-6 text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
         />
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition"
+          className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition shadow-sm"
         >
           Ingresar
         </button>
+        <p className="text-center text-sm text-slate-500 mt-4">
+          ¿Olvidaste tu contraseña? <a href="mailto:contacto@ryltraining.cl" className="text-blue-600 hover:underline">contacto@ryltraining.cl</a>
+        </p>
       </form>
     </main>
   )

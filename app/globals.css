@@ -1,20 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* ⭐ ESTA ERA LA LÍNEA QUE ROMPIA TODO
-   @import "tailwindcss";
-*/
-
+/* Variables de color base */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --background: #020617; /* slate-950 */
+  --foreground: #e5e7eb; /* slate-200 */
 }
 
-/* ⭐ ESTO ES PARTE DEL NUEVO SISTEMA TAILWIND V4
-   Y SÍ FUNCIONA, NO LO BORREMOS */
+/* Sistema de tema inline de Tailwind v4: OK dejarlo */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -24,13 +16,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #020617;
+    --foreground: #e5e7eb;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
 }
