@@ -270,7 +270,7 @@ export default function HomePage() {
         className="border-t border-white/5 bg-slate-950/98"
       >
         <div className="mx-auto max-w-6xl px-4 py-10 md:py-14">
-          <div className="grid gap-10 md:grid-cols-[1.3fr,1fr]">
+          <div className="space-y-10">
             <div>
               <h2 className="text-lg font-semibold text-slate-50">
                 Beneficios para tu empresa
@@ -299,12 +299,12 @@ export default function HomePage() {
 
               {/* Gestión de certificaciones */}
               <div className="flex items-start gap-4">
-                <div className="h-20 w-28 overflow-hidden rounded-lg ring-1 ring-white/10">
+                <div className="h-24 w-24 flex-none overflow-hidden rounded-xl ring-1 ring-white/10 bg-slate-900">
                   <Image
                     src="/servicio-gestion.jpg"
                     alt="Gestión y verificación de certificaciones"
-                    width={160}
-                    height={120}
+                    width={96}
+                    height={96}
                     className="h-full w-full object-cover"
                   />
                 </div>
@@ -321,12 +321,12 @@ export default function HomePage() {
 
               {/* Inspecciones */}
               <div className="flex items-start gap-4">
-                <div className="h-20 w-28 overflow-hidden rounded-lg ring-1 ring-white/10">
+                <div className="h-24 w-24 flex-none overflow-hidden rounded-xl ring-1 ring-white/10 bg-slate-900">
                   <Image
                     src="/servicio-inspecciones.jpg"
                     alt="Inspecciones de equipos y elementos de izaje"
-                    width={160}
-                    height={120}
+                    width={96}
+                    height={96}
                     className="h-full w-full object-cover"
                   />
                 </div>
@@ -343,12 +343,12 @@ export default function HomePage() {
 
               {/* Capacitaciones y certificaciones */}
               <div className="flex items-start gap-4">
-                <div className="h-20 w-28 overflow-hidden rounded-lg ring-1 ring-white/10">
+                <div className="h-24 w-24 flex-none overflow-hidden rounded-xl ring-1 ring-white/10 bg-slate-900">
                   <Image
                     src="/servicio-capacitacion.jpg"
                     alt="Capacitaciones y certificaciones"
-                    width={160}
-                    height={120}
+                    width={96}
+                    height={96}
                     className="h-full w-full object-cover"
                   />
                 </div>
@@ -365,12 +365,12 @@ export default function HomePage() {
 
               {/* Asesoría especializada */}
               <div className="flex items-start gap-4">
-                <div className="h-20 w-28 overflow-hidden rounded-lg ring-1 ring-white/10">
+                <div className="h-24 w-24 flex-none overflow-hidden rounded-xl ring-1 ring-white/10 bg-slate-900">
                   <Image
                     src="/servicio-asesoria.jpg"
                     alt="Asesoría especializada en izaje y maniobras delicadas"
-                    width={160}
-                    height={120}
+                    width={96}
+                    height={96}
                     className="h-full w-full object-cover"
                   />
                 </div>
