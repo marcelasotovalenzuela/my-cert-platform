@@ -1,7 +1,17 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
+
 import { useState, useEffect } from 'react'
+
+type LoginResponse = {
+  user?: {
+    email?: string
+    [key: string]: unknown
+  }
+  error?: string
+  [key: string]: unknown
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -30,7 +40,7 @@ export default function LoginPage() {
       })
 
       // Intentar parsear JSON de forma segura
-      let data: any = null
+      let data: LoginResponse | null = null
       try {
         data = await res.json()
       } catch (parseErr) {
