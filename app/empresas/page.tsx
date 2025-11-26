@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, Suspense } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 
@@ -840,5 +840,9 @@ function EmpresasPageInner() {
 }
 
 export default function EmpresasPage() {
-  return <EmpresasPageInner />;
+  return (
+    <Suspense fallback={<div>Cargando…</div>}>
+      <EmpresasPageInner />
+    </Suspense>
+  );
 }
