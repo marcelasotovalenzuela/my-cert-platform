@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const emailParam = searchParams.get("email");
 
     const id = idParam && /^\d+$/.test(idParam) ? Number(idParam) : null;
-    const email = emailParam?.trim().toLowerCase() || null;
+    const email = emailParam?.trim()?.toLowerCase() || null;
 
     if (!id && !email) {
       return NextResponse.json(
@@ -78,138 +78,13 @@ export async function GET(req: NextRequest) {
       })),
     };
 
-    // Alerta automática por certificaciones en estado crítico o de atención
-    try {
-      const host = process.env.SMTP_HOST;
-      const port = Number(process.env.SMTP_PORT || 587);
-      const user = process.env.SMTP_USER;
-      const pass = process.env.SMTP_PASS;
-      const notifyTo =
-        process.env.RECERT_NOTIFY_TO || "marcelasotovalenzuela@gmail.com";
-
-      if (!host || !user || !pass) {
-        console.warn(
-          "⚠️ SMTP incompleto. No se envía alerta automática de certificaciones."
-        );
-      } else if (empresa.trabajadores && empresa.trabajadores.length > 0) {
-        type CertAlerta = {
-          trabajador: string;
-          curso: string;
-          ct: string | null;
-          estado: "CRÍTICO" | "ATENCIÓN";
-          vence: string;
-        };
-
-        const ahora = new Date();
-        const alertas: CertAlerta[] = [];
-
-        for (const t of empresa.trabajadores ?? []) {
-          for (const c of t.certificaciones ?? []) {
-            if (!c.fechaVencimiento) continue;
-
-            const venceDate =
-              c.fechaVencimiento instanceof Date
-                ? c.fechaVencimiento
-                : new Date(c.fechaVencimiento as any);
-            if (isNaN(venceDate.getTime())) continue;
-
-            const diffMs = venceDate.getTime() - ahora.getTime();
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-            let estado: "CRÍTICO" | "ATENCIÓN" | null = null;
-            if (diffDays <= 0) {
-              estado = "CRÍTICO";
-            } else if (diffDays <= 30) {
-              estado = "ATENCIÓN";
-            }
-
-            if (estado) {
-              alertas.push({
-                trabajador: t.nombre,
-                curso: c.curso,
-                ct: t.centroTrabajo ?? null,
-                estado,
-                vence: venceDate.toLocaleDateString("es-CL"),
-              });
-            }
-          }
-        }
-
-        if (alertas.length > 0 && empresa.email) {
-          const transporter = nodemailer.createTransport({
-            host,
-            port,
-            secure: port === 465,
-            auth: { user, pass },
-          });
-
-          const from =
-            process.env.EMAIL_FROM || `R&L Training <${user}>`;
-          const subject = `Alertas de certificaciones críticas / en atención – ${empresa.nombre}`;
-
-          const lineas = alertas.map((a) => {
-            const tag =
-              a.estado === "CRÍTICO" ? "CRÍTICO" : "ATENCIÓN";
-            return `- ${a.trabajador} · ${a.curso} · CT: ${
-              a.ct || "-"
-            } · Estado: ${tag} · Vence: ${a.vence}`;
-          });
-
-          const text = [
-            `Hola ${empresa.nombre},`,
-            ``,
-            `Te escribimos desde R&L Training porque detectamos certificaciones de tus trabajadores que están en estado CRÍTICO o de ATENCIÓN.`,
-            ``,
-            ...lineas,
-            ``,
-            `Para gestionar la recertificación de inmediato, puedes ingresar a tu panel de empresa en R&L Training.`,
-            ``,
-            `Si necesitas apoyo para coordinar recertificaciones, puedes responder a este correo o escribir a juan.aguayo@ryltraining.cl.`,
-            ``,
-            `R&L Training`,
-          ].join("\n");
-
-          const html = `
-            <p>Hola <strong>${empresa.nombre}</strong>,</p>
-            <p>Te escribimos desde <strong>R&amp;L Training</strong> porque detectamos certificaciones de tus trabajadores que están en estado <strong>CRÍTICO</strong> o de <strong>ATENCIÓN</strong>.</p>
-            <ul>
-              ${alertas
-                .map((a) => {
-                  const tag =
-                    a.estado === "CRÍTICO" ? "CRÍTICO" : "ATENCIÓN";
-                  return `<li>${a.trabajador} · ${a.curso} · CT: ${
-                    a.ct || "-"
-                  } · Estado: <strong>${tag}</strong> · Vence: ${
-                    a.vence
-                  }</li>`;
-                })
-                .join("")}
-            </ul>
-            <p>Para gestionar la recertificación de inmediato, puedes ingresar a tu panel de empresa en R&amp;L Training.</p>
-            <p>Si necesitas apoyo para coordinar recertificaciones, puedes responder a este correo o escribir a <a href="mailto:juan.aguayo@ryltraining.cl">juan.aguayo@ryltraining.cl</a>.</p>
-            <p>R&amp;L Training</p>
-          `;
-
-          await transporter.sendMail({
-            from,
-            to: empresa.email,
-            bcc: notifyTo,
-            subject,
-            text,
-            html,
-          });
-
-          console.log(
-            `📧 Alerta automática de certificaciones enviada a ${empresa.email} (BCC: ${notifyTo})`
-          );
-        }
-      }
-    } catch (alertErr) {
-      console.error(
-        "❌ Error enviando alerta automática de certificaciones:",
-        alertErr
-      );
-    }
+    // 👇 IMPORTANTE:
+    // Antes aquí se enviaba un correo automático en cada GET
+    // con las certificaciones CRÍTICAS / ATENCIÓN.
+    // Lo eliminamos para que:
+    //  - /empresas solo LEA información
+    //  - El envío de alertas se haga SOLO cuando cambie el estado
+    //    de una certificación (eso lo implementaremos en otro flujo).
 
     return NextResponse.json(
       { ok: true, empresa: empresaOut },
@@ -314,11 +189,15 @@ export async function POST(req: NextRequest) {
     const html = `
       <p><strong>Solicitud de recertificación</strong></p>
       <ul>
-        <li><strong>Empresa:</strong> ${empresaNombre} (ID: ${empresaId ?? "N/A"})</li>
+        <li><strong>Empresa:</strong> ${empresaNombre} (ID: ${
+      empresaId ?? "N/A"
+    })</li>
         <li><strong>Correo empresa:</strong> ${empresaEmail || "N/A"}</li>
         <li><strong>Trabajador:</strong> ${trabajadorNombre} (ID: ${trabajadorId})</li>
         <li><strong>Curso:</strong> ${curso}</li>
-        <li><strong>Fecha solicitud:</strong> ${new Date().toLocaleString("es-CL")}</li>
+        <li><strong>Fecha solicitud:</strong> ${new Date().toLocaleString(
+          "es-CL"
+        )}</li>
       </ul>
 
       <p>Para gestionar la recertificación de inmediato, haz clic aquí:</p>

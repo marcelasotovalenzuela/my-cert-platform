@@ -48,8 +48,12 @@ export default function LoginPage() {
       }
 
       if (res.ok && data?.user) {
+        const empresaEmail = (data.user?.email ?? '').toString()
+
         localStorage.setItem('empresaUser', JSON.stringify(data.user))
-        localStorage.setItem('email', (data.user?.email ?? '').toString())
+        localStorage.setItem('email', empresaEmail)
+        localStorage.setItem('empresaEmail', empresaEmail)
+
         window.location.href = '/empresas'
       } else {
         const message = data?.error || 'Error en el inicio de sesión'

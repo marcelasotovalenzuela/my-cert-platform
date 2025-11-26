@@ -164,13 +164,13 @@ export async function GET(
     })
   }
 
-  page.drawText("Juan Aguayo", {
+  page.drawText("Marcela Soto", {
     x: 560,
     y: 100,
     size: 14,
     font: fontBold,
   })
-  page.drawText("Gerente Operaciones", {
+  page.drawText("CEO", {
     x: 560,
     y: 85,
     size: 12,

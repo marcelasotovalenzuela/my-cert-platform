@@ -11,19 +11,18 @@ type ErrorPageProps = {
 
 export default function ErrorPage({ error, reset }: ErrorPageProps) {
   useEffect(() => {
-    // Podrías loguear el error a un servicio externo aquí
     console.error("App error:", error);
   }, [error]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-4">
       <div className="max-w-md text-center space-y-6">
-        <h1 className="text-4xl font-semibold tracking-tight text-red-400">
+        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-red-400">
           Error interno del servidor
         </h1>
         <p className="text-slate-300">
-          Ocurrió un problema inesperado al cargar la página. Nuestro equipo ya
-          está revisando este error.
+          Ocurrió un problema inesperado al cargar la página. Ya estamos
+          revisando este error.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

@@ -105,9 +105,9 @@ export default function HomePage() {
             <div className="flex flex-wrap gap-6 pt-2 text-xs text-slate-400">
               <div>
                 <p className="font-semibold text-slate-200">
-                  Certificados con QR único
+                  Credencial con QR único
                 </p>
-                <p>Diplomas y credenciales listos para compartir y descargar.</p>
+                <p>Diplomas y certificados listos para compartir y descargar.</p>
               </div>
               <div>
                 <p className="font-semibold text-slate-200">
@@ -248,7 +248,7 @@ export default function HomePage() {
               </p>
               <p className="mt-2 text-xs text-slate-300">
                 Cada mandante/contratista cuenta con su acceso para revisar
-                vigencias, descargar diplomas y credenciales.
+                vigencias, descargar diplomas y certificados.
               </p>
             </div>
             <div className="rounded-xl border border-white/10 bg-slate-900/60 p-4">
@@ -357,8 +357,8 @@ export default function HomePage() {
                     Capacitaciones y certificaciones
                   </p>
                   <p className="mt-1 text-sm text-slate-300">
-                    Formación en Rigging &amp; Lifting en obra o en sala, con
-                    diplomas y credenciales integrados a la plataforma.
+                    Formación en obra o en sala, con
+                    diplomas y certificados integrados a la plataforma.
                   </p>
                 </div>
               </div>
