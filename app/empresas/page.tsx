@@ -132,6 +132,7 @@ function EmpresasPageInner() {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [alertSent, setAlertSent] = useState(false);
 
   const handleViewDiploma = (certId: number) => {
     window.open(`/api/diploma/${certId}`, "_blank", "noopener,noreferrer");
@@ -331,6 +332,46 @@ function EmpresasPageInner() {
   useEffect(() => {
     setPage(1);
   }, [filter, searchTerm, sortKey, sortDir]);
+
+  useEffect(() => {
+    if (!empresa) return;
+    if (!certificaciones.length) return;
+    if (alertSent) return;
+
+    const criticasOAtencion = certificaciones
+      .map((cert) => {
+        const statusInfo = getStatusInfo(cert.fechaVencimiento);
+        return { cert, status: statusInfo.status };
+      })
+      .filter(
+        ({ status }) => status === "critico" || status === "atencion"
+      );
+
+    if (!criticasOAtencion.length) return;
+
+    setAlertSent(true);
+
+    const payload = {
+      emailDestino: empresa.email,
+      empresaNombre: empresa.nombre,
+      certificaciones: criticasOAtencion.map(({ cert, status }) => ({
+        curso: cert.curso,
+        trabajadorNombre: `${cert.trabajadorNombre} ${cert.trabajadorApellido}`.trim(),
+        trabajadorRut: cert.trabajadorRut ?? "",
+        fechaVencimiento: cert.fechaVencimiento ?? "",
+        centroTrabajo: cert.centroTrabajo ?? "",
+        estado: status === "critico" ? "Crítico" : "En atención",
+      })),
+    };
+
+    fetch("/api/alertas/estado-certificaciones", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).catch((err) => {
+      console.error("Error al enviar alerta de estado:", err);
+    });
+  }, [empresa, certificaciones, alertSent]);
 
   const stats: DashboardStats = useMemo(
     () => getDashboardStats(certificaciones),
