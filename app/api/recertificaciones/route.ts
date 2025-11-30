@@ -233,10 +233,18 @@ export async function POST(req: NextRequest) {
 
     console.log("📧 Recertificación enviada correctamente desde /api/recertificaciones")
     return NextResponse.json({ ok: true, message: "Recertificación solicitada" })
-  } catch (err) {
+  } catch (err: any) {
     console.error("❌ Error en POST /api/recertificaciones:", err)
+    const message =
+      err && typeof err === "object" && "message" in err
+        ? (err as any).message
+        : String(err)
+
     return NextResponse.json(
-      { error: "Error al procesar la solicitud de recertificación" },
+      {
+        error: "Error al procesar la solicitud de recertificación",
+        detail: message,
+      },
       { status: 500 }
     )
   }
