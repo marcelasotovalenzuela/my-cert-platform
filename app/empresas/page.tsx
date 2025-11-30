@@ -100,14 +100,6 @@ function buildStatusTooltip(fechaVencimiento: string | null): string {
   }
 }
 
-  if (dias > 0) {
-    if (dias === 1) return `Vence en 1 día (${fechaStr}).`;
-    return `Vence en ${dias} días (${fechaStr}).`;
-  }
-
-  return `Vence hoy (${fechaStr}).`;
-}
-
 type SortKey = "curso" | "trabajador" | "centro" | "emision" | "vencimiento" | "estado";
 type SortDir = "asc" | "desc";
 const PAGE_SIZE = 10;
