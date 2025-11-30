@@ -336,6 +336,8 @@ function EmpresasPageInner() {
   useEffect(() => {
     if (!empresa) return;
     if (!certificaciones.length) return;
+
+    // Evita múltiples envíos en el mismo ciclo de render
     if (alertSent) return;
 
     const criticasOAtencion = certificaciones
@@ -348,6 +350,20 @@ function EmpresasPageInner() {
       );
 
     if (!criticasOAtencion.length) return;
+
+    // Clave por empresa + día, para no enviar la alerta cada vez que se loguean,
+    // sino como máximo 1 vez al día por empresa.
+    if (typeof window !== "undefined" && empresa.id) {
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const storageKey = `ryl_alert_estado_${empresa.id}_${today}`;
+      const alreadySent = window.localStorage.getItem(storageKey);
+      if (alreadySent === "1") {
+        return;
+      }
+
+      // Marcamos como enviado para esta empresa en este día
+      window.localStorage.setItem(storageKey, "1");
+    }
 
     setAlertSent(true);
 
