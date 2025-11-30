@@ -6,15 +6,8 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import fs from "fs"
 import path from "path"
 import { prisma } from "@/lib/prisma"
+import QRCode from "qrcode"
 
-function generarCodigo(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-  let result = ""
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return `VERIF-${result}`
-}
 
 
 export async function GET(
@@ -34,15 +27,9 @@ export async function GET(
 
   const trabajador = cert.trabajador
 
-  // Usa código existente o genera y guarda uno nuevo
-    let codigo = cert.codigoVerificacion
-    if (!codigo) {
-      codigo = generarCodigo()
-      await prisma.certificacion.update({
-        where: { id: cert.id },
-        data: { codigoVerificacion: codigo }, // 👈 siempre camelCase en código
-      })
-    }
+    // Código ya generado por Supabase
+    const codigo = cert.codigoVerificacion
+    const urlVerificacion = `https://ryltraining.cl/verificar/${codigo}`
 
   const pdfDoc = await PDFDocument.create()
   const page = pdfDoc.addPage([842, 595])
@@ -59,15 +46,33 @@ export async function GET(
     borderColor: rgb(0.2, 0.2, 0.2),
   })
 
+  // Barra superior corporativa
+  page.drawRectangle({
+    x: 20,
+    y: 545,
+    width: 802,
+    height: 25,
+    color: rgb(0, 0.27, 0.6),
+  })
+  const headerText = "Rigging & Lifting Training SpA"
+  const headerWidth = fontBold.widthOfTextAtSize(headerText, 11)
+  page.drawText(headerText, {
+    x: page.getWidth() / 2 - headerWidth / 2,
+    y: 553,
+    size: 11,
+    font: fontBold,
+    color: rgb(1, 1, 1),
+  })
+
   // Logo
   const logoPath = path.join(process.cwd(), "public", "logo.png")
   if (fs.existsSync(logoPath)) {
     const logoImageBytes = fs.readFileSync(logoPath)
     const logoImage = await pdfDoc.embedPng(logoImageBytes)
-    const logoDims = logoImage.scale(0.142)
+    const logoDims = logoImage.scale(0.10)
     page.drawImage(logoImage, {
       x: page.getWidth() / 2 - logoDims.width / 2,
-      y: 440,
+      y: 430,
       width: logoDims.width,
       height: logoDims.height,
     })
@@ -75,79 +80,112 @@ export async function GET(
 
   // Texto
   const title = "DIPLOMA DE CERTIFICACIÓN"
-  const textWidth = fontBold.widthOfTextAtSize(title, 28)
+  const textWidth = fontBold.widthOfTextAtSize(title, 22)
   page.drawText(title, {
     x: page.getWidth() / 2 - textWidth / 2,
     y: 380,
-    size: 28,
+    size: 22,
     font: fontBold,
     color: rgb(0, 0.2, 0.6),
   })
 
-  page.drawText(`Se confiere el presente diploma a:`, {
-    x: 100,
-    y: 330,
+  const t1 = "Se confiere el presente diploma a:"
+  const t1Width = fontRegular.widthOfTextAtSize(t1, 16)
+  page.drawText(t1, {
+    x: page.getWidth() / 2 - t1Width / 2,
+    y: 360,
     size: 16,
     font: fontRegular,
   })
 
-  page.drawText(`${trabajador.nombre} ${trabajador.apellido}`, {
-    x: 100,
-    y: 300,
+  const t2 = `${trabajador.nombre} ${trabajador.apellido}`
+  const t2Width = fontBold.widthOfTextAtSize(t2, 22)
+  page.drawText(t2, {
+    x: page.getWidth() / 2 - t2Width / 2,
+    y: 325,
     size: 22,
     font: fontBold,
   })
 
-  page.drawText(`RUT: ${trabajador.rut}`, {
-    x: 100,
-    y: 275,
+  const t3 = `RUT: ${trabajador.rut}`
+  const t3Width = fontRegular.widthOfTextAtSize(t3, 16)
+  page.drawText(t3, {
+    x: page.getWidth() / 2 - t3Width / 2,
+    y: 305,
     size: 16,
     font: fontRegular,
   })
 
-  if (trabajador.centroTrabajo) {
-    page.drawText(`Centro de Trabajo: ${trabajador.centroTrabajo}`, {
-      x: 100,
-      y: 255,
-      size: 14,
-      font: fontRegular,
-    })
-  }
-
-  page.drawText(`Por haber aprobado satisfactoriamente el curso:`, {
-    x: 100,
-    y: 225,
-    size: 16,
+  const t4 = "Por haber aprobado satisfactoriamente el curso:"
+  const t4Width = fontRegular.widthOfTextAtSize(t4, 15)
+  page.drawText(t4, {
+    x: page.getWidth() / 2 - t4Width / 2 + 10,
+    y: 270,
+    size: 15,
     font: fontRegular,
   })
 
-  page.drawText(`${cert.curso}`, {
-    x: 100,
-    y: 200,
+  const t5 = `${cert.curso}`
+  const t5Width = fontBold.widthOfTextAtSize(t5, 18)
+  page.drawText(t5, {
+    x: page.getWidth() / 2 - t5Width / 2,
+    y: 245,
     size: 18,
     font: fontBold,
   })
 
-  const hoy = new Date().toLocaleDateString("es-CL")
-  page.drawText(`Fecha de emisión: ${hoy}`, {
-    x: 100,
-    y: 160,
-    size: 14,
-    font: fontRegular,
-  })
-  page.drawText(`Código de verificación: ${codigo}`, {
-    x: 100,
-    y: 140,
-    size: 14,
-    font: fontBold,
-    color: rgb(0.8, 0, 0),
-  })
-  page.drawText(`Verifique en: https://www.ryltraining.cl/verificar`, {
-    x: 100,
-    y: 120,
-    size: 12,
-    font: fontRegular,
-    color: rgb(0, 0, 0.6),
+    const fechaCapacitacion = new Date(cert.fechaEmision).toLocaleDateString("es-CL");
+    const textFecha = `Capacitación realizada el: ${fechaCapacitacion}`;
+    const textFechaWidth = fontRegular.widthOfTextAtSize(textFecha, 11);
+    page.drawText(textFecha, {
+      x: page.getWidth() / 2 - textFechaWidth / 2,
+      y: 165,
+      size: 11,
+      font: fontRegular,
+    });
+
+    const textCodigo = `Código de verificación: ${codigo}`;
+    const textCodigoWidth = fontBold.widthOfTextAtSize(textCodigo, 11);
+    page.drawText(textCodigo, {
+      x: page.getWidth() / 2 - textCodigoWidth / 2,
+      y: 145,
+      size: 11,
+      font: fontBold,
+      color: rgb(0.8, 0, 0),
+    });
+
+  // Columna derecha: QR y link de verificación
+  const qrX = 120
+  const qrY = 60
+
+    const textVerif = "Verificación en línea";
+    const textVerifWidth = fontRegular.widthOfTextAtSize(textVerif, 11);
+    page.drawText(textVerif, {
+      x: page.getWidth() / 2 - textVerifWidth / 2,
+      y: 125,
+      size: 11,
+      font: fontRegular,
+    });
+
+    const textUrl = "ryltraining.cl/verificar/";
+    const textUrlWidth = fontRegular.widthOfTextAtSize(textUrl, 10);
+    page.drawText(textUrl, {
+      x: page.getWidth() / 2 - textUrlWidth / 2,
+      y: 112,
+      size: 10,
+      font: fontRegular,
+      color: rgb(0, 0, 0.6),
+    });
+
+  const qrPngBytes = await QRCode.toBuffer(urlVerificacion, { width: 90, margin: 1 })
+  const qrImage = await pdfDoc.embedPng(qrPngBytes)
+  const qrDims = qrImage.scale(1)
+
+  page.drawImage(qrImage, {
+    x: qrX,
+    y: qrY,
+    width: qrDims.width * 0.9,
+    height: qrDims.height * 0.9,
   })
 
   // Firma
@@ -157,30 +195,48 @@ export async function GET(
     const firmaImage = await pdfDoc.embedPng(firmaImageBytes)
     const firmaDims = firmaImage.scale(0.19)
     page.drawImage(firmaImage, {
-      x: 435,
-      y: 80,
+      x: 495,
+      y: 70,
       width: firmaDims.width,
       height: firmaDims.height,
     })
   }
 
   page.drawText("Marcela Soto", {
-    x: 560,
-    y: 100,
+    x: 630,
+    y: 110,
     size: 14,
     font: fontBold,
   })
   page.drawText("CEO", {
-    x: 560,
-    y: 85,
+    x: 660,
+    y: 90,
     size: 12,
     font: fontRegular,
   })
   page.drawText("R&L Training", {
-    x: 560,
+    x: 640,
     y: 70,
     size: 12,
     font: fontRegular,
+  })
+
+  // Pie de página corporativo
+  page.drawRectangle({
+    x: 20,
+    y: 48,
+    width: 802,
+    height: 0.5,
+    color: rgb(0.8, 0.8, 0.8),
+  })
+  const footerText = "Documento emitido electrónicamente a través de R&L Training • www.ryltraining.cl"
+  const footerWidth = fontRegular.widthOfTextAtSize(footerText, 10)
+  page.drawText(footerText, {
+    x: page.getWidth() / 2 - footerWidth / 2,
+    y: 32,
+    size: 10,
+    font: fontRegular,
+    color: rgb(0.3, 0.3, 0.3),
   })
 
     const pdfBytes = await pdfDoc.save()
@@ -192,5 +248,5 @@ export async function GET(
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename=diploma-${id}.pdf`,
       },
-    })    
+    })
 }

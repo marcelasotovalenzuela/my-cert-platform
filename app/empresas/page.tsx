@@ -12,6 +12,7 @@ type ApiCertificacion = {
   curso: string;
   fechaEmision: string | null;
   fechaVencimiento: string | null;
+  informe_url?: string | null;
 };
 
 type ApiTrabajador = {
@@ -54,6 +55,7 @@ type Certificacion = {
   trabajadorApellido: string;
   trabajadorRut: string | null;     // 🔹 lo usamos para el PDF
   centroTrabajo: string | null;
+  informe_url: string | null;
 };
 
 type FilterKey = "all" | "critico" | "atencion" | "vigente";
@@ -126,11 +128,15 @@ function EmpresasPageInner() {
   const [page, setPage] = useState(1);
 
   const handleViewDiploma = (certId: number) => {
-    window.open(`/exports/diploma/${certId}`, "_blank", "noopener,noreferrer");
+    window.open(`/api/diploma/${certId}`, "_blank", "noopener,noreferrer");
   };
 
-  const handleViewCertificado = (certId: number) => {
-    window.open(`/exports/certificado/${certId}`, "_blank", "noopener,noreferrer");
+  const handleViewCertificado = (informeUrl: string | null) => {
+    if (!informeUrl) {
+      alert("Esta certificación no tiene informe de certificación cargado aún.");
+      return;
+    }
+    window.open(informeUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleRecertificacion = async (certId: number) => {
@@ -297,6 +303,7 @@ function EmpresasPageInner() {
             trabajadorApellido: t.apellido,
             trabajadorRut: t.rut ?? null,     // 🔹 guardamos rut del backend
             centroTrabajo: t.centroTrabajo,
+            informe_url: c.informe_url ?? null,
           });
         });
       });
@@ -336,10 +343,12 @@ function EmpresasPageInner() {
         const nombreTrabajador = `${c.trabajadorNombre} ${c.trabajadorApellido}`.toLowerCase();
         const curso = (c.curso || "").toLowerCase();
         const centro = (c.centroTrabajo || "").toLowerCase();
+        const rut = (c.trabajadorRut || "").toLowerCase();
         return (
           nombreTrabajador.includes(term) ||
           curso.includes(term) ||
-          centro.includes(term)
+          centro.includes(term) ||
+          rut.includes(term)
         );
       });
     }
@@ -543,7 +552,7 @@ function EmpresasPageInner() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Buscar por curso, trabajador o centro de trabajo"
+                  placeholder="Buscar por curso, trabajador, RUT o centro de trabajo"
                   className="w-full rounded-full border border-slate-200 bg-white px-4 py-2 text-[13px] text-slate-800 shadow-sm outline-none ring-0 placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
                 />
               </div>
@@ -596,6 +605,9 @@ function EmpresasPageInner() {
                           )}
                         </span>
                       </button>
+                    </th>
+                    <th className="px-4 py-3.5 text-left font-semibold text-slate-700">
+                      RUT
                     </th>
                     <th className="px-4 py-3.5 text-left font-semibold text-slate-700 first:rounded-tl-3xl last:rounded-tr-3xl">
                       <button
@@ -685,6 +697,7 @@ function EmpresasPageInner() {
                       >
                         <td className="px-4 py-3 text-slate-900">{cert.curso}</td>
                         <td className="px-4 py-3 text-slate-900">{`${cert.trabajadorNombre} ${cert.trabajadorApellido}`}</td>
+                        <td className="px-4 py-3 text-slate-900">{cert.trabajadorRut || "-"}</td>
                         <td className="px-4 py-3 text-slate-900">{cert.centroTrabajo || "-"}</td>
                         <td className="px-4 py-3 text-slate-900 text-center">{formatFecha(cert.fechaEmision)}</td>
                         <td className="px-4 py-3 text-slate-900 text-center">{formatFecha(cert.fechaVencimiento)}</td>
@@ -745,7 +758,7 @@ function EmpresasPageInner() {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    handleViewCertificado(cert.id);
+                                    handleViewCertificado(cert.informe_url);
                                     setOpenMenuId(null);
                                   }}
                                   className="block w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50"
@@ -776,7 +789,7 @@ function EmpresasPageInner() {
                   })}
                   {certificacionesFiltradas.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-3 py-6 text-center text-sm text-slate-500">
+                      <td colSpan={8} className="px-3 py-6 text-center text-sm text-slate-500">
                         No hay certificaciones para mostrar con el filtro seleccionado.
                       </td>
                     </tr>

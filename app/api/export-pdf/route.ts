@@ -115,18 +115,19 @@ export async function POST(req: NextRequest) {
     const logoImage = await pdfDoc.embedPng(logoBytes)
     const logoDims = logoImage.scale(1)
 
-    const headerColor = rgb(0.05, 0.25, 0.5)
-    const borderColor = rgb(0.8, 0.85, 0.9)
-    const rowLineColor = rgb(0.9, 0.92, 0.95) // líneas muy suaves
+    const headerColor = rgb(0.13, 0.24, 0.33) // tono más neutro tipo slate
+    const borderColor = rgb(0.85, 0.89, 0.94)
+    const rowLineColor = rgb(0.93, 0.95, 0.98) // líneas muy suaves
 
-    // 👉 columnas (sin Emisión)
+    // 👉 columnas para la tabla exportada
+    // El ancho total es 532 (= 612 - 80), que coincide con el contenido entre márgenes 40 y 40.
     const cols = [
-      { label: 'Curso', width: 80 },
-      { label: 'Trabajador', width: 140 },
-      { label: 'RUT', width: 80 },
-      { label: 'Centro de Trabajo', width: 120 },
-      { label: 'Vencimiento', width: 70 },
-      { label: 'Estado', width: 50 },
+      { key: "curso", label: "Curso", width: 110 },
+      { key: "trabajador", label: "Trabajador", width: 135 },
+      { key: "rut", label: "RUT", width: 60 },
+      { key: "centro", label: "CT", width: 110 },
+      { key: "vencimiento", label: "Vence", width: 60 },
+      { key: "estado", label: "Estado", width: 60 },
     ]
 
     const totalTableWidth = cols.reduce((a, c) => a + c.width, 0)
@@ -197,35 +198,44 @@ export async function POST(req: NextRequest) {
     }
 
     const drawHeader = () => {
-      const headerHeight = 22
-      // header sólido con línea inferior
-      page.drawRectangle({
-        x,
-        y: y - headerHeight,
-        width: totalTableWidth,
-        height: headerHeight,
-        color: headerColor,
-      })
+      const headerHeight = 24
+      const headerFontSize = 9
 
+      // Solo una línea inferior muy suave (sin bloque relleno)
       page.drawLine({
         start: { x, y: y - headerHeight },
         end: { x: x + totalTableWidth, y: y - headerHeight },
-        thickness: 0.4,
-        color: rgb(0.02, 0.17, 0.35),
+        thickness: 0.6,
+        color: borderColor,
       })
 
-      let colX = x + 10
+      // Encabezados en mayúscula, centrados dentro de cada columna, con posibilidad de 2 líneas
+      let colX = x
       cols.forEach((col) => {
-        page.drawText(col.label, {
-          x: colX,
-          y: y - 15,
-          size: 10,
-          font,
-          color: rgb(1, 1, 1),
+        const label = col.label.toUpperCase()
+        const colLeft = colX
+        const colCenter = colLeft + col.width / 2
+        const maxWidth = col.width - 16 // padding horizontal dentro de la cabecera
+        const lines = wrapTextByWidth(label, font, headerFontSize, maxWidth)
+        const lineHeight = headerFontSize + 2
+        let lineY = y - 14
+
+        lines.slice(0, 2).forEach((ln, idx) => {
+          const textWidth = font.widthOfTextAtSize(ln, headerFontSize)
+          const textX = colCenter - textWidth / 2
+          page.drawText(ln, {
+            x: textX,
+            y: lineY - idx * lineHeight,
+            size: headerFontSize,
+            font,
+            color: rgb(0.45, 0.5, 0.55),
+          })
         })
+
         colX += col.width
       })
-      y -= headerHeight + 6
+
+      y -= headerHeight + 4
     }
 
     // 🔹 Prepara cada página nueva: header + datos de empresa + título + filtro + línea + encabezado de tabla
@@ -258,7 +268,7 @@ export async function POST(req: NextRequest) {
         thickness: 0.7,
         color: borderColor,
       })
-      y -= 14
+      y -= 22
 
       // Título de la sección + filtro
       const title = 'Listado de certificaciones por empresa'
@@ -283,7 +293,7 @@ export async function POST(req: NextRequest) {
         color: rgb(0.25, 0.35, 0.55),
       })
 
-      y -= 18
+      y -= 26
 
       // Línea divisoria antes de tabla
       page.drawLine({
@@ -309,104 +319,126 @@ export async function POST(req: NextRequest) {
     // 👉 Primera página
     preparePage()
 
-    // Filas
-    const fontSizeRow = 8
+    // Filas - diseño minimal con wrap en curso, trabajador y centro
+    const fontSizeRow = 9
+    const bottomMargin = 80
     const fRow = font as FontWithMetrics
     const baseLineRow = fRow.heightAtSize ? fRow.heightAtSize(fontSizeRow) : fontSizeRow * 1.2
-    const lineHeight = baseLineRow * 1.05
-    const bottomMargin = 80
-
+    const lineHeight = baseLineRow * 1.1
     let rowIndex = 0
 
     certificaciones.forEach((cert: CertItem) => {
       const status = getCertStatus(cert.fechaVencimiento)
-      const trabajadorNombre = `${cert.trabajador.nombre ?? ''} ${cert.trabajador.apellido ?? ''}`.trim()
-      const rutTrabajador = cert.trabajador.rut || '—'
-      const centroTrabajo = cert.trabajador.centroTrabajo || '—'
-
+      const trabajadorNombre = `${cert.trabajador.nombre ?? ""} ${cert.trabajador.apellido ?? ""}`.trim()
+      const rutTrabajador = cert.trabajador.rut || "—"
+      const centroTrabajo = cert.trabajador.centroTrabajo || "—"
       const venceStr = cert.fechaVencimiento
-        ? new Date(cert.fechaVencimiento).toLocaleDateString('es-CL')
-        : ''
+        ? new Date(cert.fechaVencimiento).toLocaleDateString("es-CL")
+        : "—"
 
-      const linesCurso = wrapTextByWidth(String(cert.curso ?? ''), font, fontSizeRow, cols[0].width - 14)
-      const linesTrabajador = wrapTextByWidth(trabajadorNombre, font, fontSizeRow, cols[1].width - 14)
-      const linesRut = wrapTextByWidth(String(rutTrabajador), font, fontSizeRow, cols[2].width - 14)
-      const linesCentro = wrapTextByWidth(String(centroTrabajo), font, fontSizeRow, cols[3].width - 14)
-      const linesVence = wrapTextByWidth(venceStr, font, fontSizeRow, cols[4].width - 14)
-      const linesEstado = wrapTextByWidth(String(status.label), font, fontSizeRow, cols[5].width - 14)
+      const paddingX = 14
 
-      const maxLines = Math.max(
-        linesCurso.length,
-        linesTrabajador.length,
-        linesRut.length,
-        linesCentro.length,
-        linesVence.length,
-        linesEstado.length
-      )
+      // calcular líneas con wrap para las columnas largas
+      const maxWidthCurso = cols[0].width - paddingX * 2
+      const maxWidthTrabajador = cols[1].width - paddingX * 2
+      const maxWidthCentro = cols[3].width - paddingX * 2
 
-      const rowHeight = maxLines * lineHeight + 10
+      const linesCurso = wrapTextByWidth(cert.curso || "—", font, fontSizeRow, maxWidthCurso)
+      const linesTrabajador = wrapTextByWidth(trabajadorNombre || "—", font, fontSizeRow, maxWidthTrabajador)
+      const linesCentro = wrapTextByWidth(centroTrabajo, font, fontSizeRow, maxWidthCentro)
+
+      const maxLines = Math.max(linesCurso.length, linesTrabajador.length, linesCentro.length, 1)
+      const rowHeight = Math.max(maxLines * lineHeight + 8, 24)
 
       if (y - rowHeight < bottomMargin) {
         nuevaPagina()
       }
 
-      let colX = x
-      const textTop = y - 6
+      const yTop = y - 6
 
-      const allLines = [
-        linesCurso,
-        linesTrabajador,
-        linesRut,
-        linesCentro,
-        linesVence,
-        linesEstado,
-      ]
+      // Curso
+      let colX = x + paddingX
+      drawLines(page, linesCurso, colX, yTop, maxWidthCurso, font, fontSizeRow, rgb(0.1, 0.1, 0.1))
 
-      for (let i = 0; i < cols.length; i++) {
-        const col = cols[i]
+      // Trabajador
+      colX += cols[0].width
+      drawLines(page, linesTrabajador, colX, yTop, maxWidthTrabajador, font, fontSizeRow, rgb(0.1, 0.1, 0.1))
 
-        if (i === cols.length - 1) {
-          // 👉 Badge para ESTADO
-          const label = status.label
-          const paddingX = 4
-          const paddingY = 2
-          const textWidth = font.widthOfTextAtSize(label, fontSizeRow)
-          const badgeWidth = textWidth + paddingX * 2
-          const badgeHeight = fontSizeRow + paddingY * 2
-
-          const badgeX = colX + (col.width - badgeWidth) / 2
-          const badgeY = y - rowHeight / 2 - badgeHeight / 2 + 2
-
-          page.drawRectangle({
-            x: badgeX,
-            y: badgeY,
-            width: badgeWidth,
-            height: badgeHeight,
-            color: status.color,
-          })
-
-          page.drawText(label, {
-            x: badgeX + paddingX,
-            y: badgeY + paddingY,
+        // RUT (una sola línea) centrado en su columna
+        colX += cols[1].width
+        {
+          const colLeft = colX - paddingX // corregimos el padding
+          const colCenter = colLeft + cols[2].width / 2
+          const tw = font.widthOfTextAtSize(rutTrabajador, fontSizeRow)
+          page.drawText(rutTrabajador, {
+            x: colCenter - tw / 2,
+            y: yTop - 2,
             size: fontSizeRow,
             font,
-            color: rgb(1, 1, 1),
+            color: rgb(0.15, 0.15, 0.15),
           })
-        } else {
-          // resto de columnas: texto normal con más padding
-          const lines = allLines[i]
-          drawLines(page, lines, colX + 10, textTop, col.width - 20, font, fontSizeRow, rgb(0, 0, 0))
         }
 
-        colX += col.width
-      }
+        // CT (Centro de Trabajo) con wrap y centrado por línea
+        colX += cols[2].width
+        {
+          const colLeft = colX - paddingX // corregimos el padding
+          const colWidth = cols[3].width
+          const colCenter = colLeft + colWidth / 2
+          const lh = lineHeight
+          let yy = yTop - 2
 
-      // línea horizontal suave al final de la fila (sin cebra)
+          linesCentro.forEach((ln) => {
+            const tw = font.widthOfTextAtSize(ln, fontSizeRow)
+            page.drawText(ln, {
+              x: colCenter - tw / 2,
+              y: yy,
+              size: fontSizeRow,
+              font,
+              color: rgb(0.15, 0.15, 0.15),
+            })
+            yy -= lh
+          })
+        }
+
+        // Vence (una sola línea) centrado
+        colX += cols[3].width
+        {
+          const colLeft = colX - paddingX // corregimos el padding
+          const colCenter = colLeft + cols[4].width / 2
+          const tw = font.widthOfTextAtSize(venceStr, fontSizeRow)
+          page.drawText(venceStr, {
+            x: colCenter - tw / 2,
+            y: yTop - 2,
+            size: fontSizeRow,
+            font,
+            color: rgb(0.15, 0.15, 0.15),
+          })
+        }
+
+        // Estado: solo texto coloreado, centrado en su columna
+        colX += cols[4].width
+        {
+          const estadoLabel = status.label
+          const estadoColor = status.color
+          const colLeft = colX - paddingX // corregimos el padding
+          const colCenter = colLeft + cols[5].width / 2
+          const tw = font.widthOfTextAtSize(estadoLabel, fontSizeRow)
+          page.drawText(estadoLabel, {
+            x: colCenter - tw / 2,
+            y: yTop - 2,
+            size: fontSizeRow,
+            font,
+            color: estadoColor,
+          })
+        }
+
+      // Línea inferior muy suave por fila (sin zebra ni cajas)
       page.drawLine({
         start: { x, y: y - rowHeight },
         end: { x: x + totalTableWidth, y: y - rowHeight },
         thickness: 0.25,
-        color: rowLineColor,
+        color: rgb(0.9, 0.93, 0.97),
       })
 
       y -= rowHeight
@@ -443,7 +475,10 @@ export async function POST(req: NextRequest) {
     const safeEmpresa = String(empresaNombre || 'empresa').replace(/[^a-zA-Z0-9-_]+/g, '-')
     const filename = `certificaciones_${safeEmpresa}_${fechaNombre}.pdf`
 
-    const ab = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer
+    const ab = pdfBytes.buffer.slice(
+        pdfBytes.byteOffset,
+        pdfBytes.byteOffset + pdfBytes.byteLength
+      ) as ArrayBuffer
 
     return new Response(ab, {
       headers: {

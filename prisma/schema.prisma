@@ -35,13 +35,17 @@ model Trabajador {
 }
 
 model Certificacion {
-  id                  Int        @id @default(autoincrement())
-  curso               String
-  fechaEmision        DateTime
-  fechaVencimiento    DateTime
-  trabajadorId        Int
-  codigoVerificacion  String?   @map("codigo_verificacion") @unique
-  trabajador          Trabajador @relation(fields: [trabajadorId], references: [id])
+  id               Int        @id @default(autoincrement())
+  curso            String
+  fechaEmision     DateTime
+  fechaVencimiento DateTime
+  trabajadorId     Int
+  informe_url   String?   @db.Text
+
+  // 👇 importante: ? + @map("codigo_verificacion")
+  codigoVerificacion String? @unique @default(cuid()) @map("codigo_verificacion")
+
+  trabajador       Trabajador @relation(fields: [trabajadorId], references: [id])
 
   @@map("Certificacion")
 }

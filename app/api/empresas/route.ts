@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
         id: t.id,
         nombre: t.nombre,
         apellido: t.apellido ?? null,
+        rut: t.rut ?? null,
         centroTrabajo: t.centroTrabajo ?? null,
         certificaciones: (t.certificaciones ?? []).map((c) => ({
           id: c.id,
@@ -69,11 +70,16 @@ export async function GET(req: NextRequest) {
           fechaEmision:
             c.fechaEmision instanceof Date
               ? c.fechaEmision.toISOString()
-              : String(c.fechaEmision),
+              : c.fechaEmision
+              ? String(c.fechaEmision)
+              : null,
           fechaVencimiento:
             c.fechaVencimiento instanceof Date
               ? c.fechaVencimiento.toISOString()
-              : String(c.fechaVencimiento),
+              : c.fechaVencimiento
+              ? String(c.fechaVencimiento)
+              : null,
+          informe_url: c.informe_url ?? null,
         })),
       })),
     };

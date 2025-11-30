@@ -49,7 +49,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/login"
-              className="rounded-full bg-emerald-400 px-4 py-2 text-xs font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-300"
+              className="hidden md:flex items-center justify-center text-center rounded-full bg-emerald-400 px-4 py-2 text-xs font-semibold text-slate-950 shadow-md shadow-emerald-500/40 transition hover:bg-emerald-300"
             >
               Entrar al panel
             </Link>
@@ -90,7 +90,7 @@ export default function HomePage() {
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/login"
-                className="rounded-full bg-emerald-400 px-5 py-2.5 text-xs font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-300"
+                className="w-full max-w-xs rounded-full bg-emerald-400 px-6 py-3 text-xs font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-300 active:scale-[0.98] sm:w-auto sm:max-w-none"
               >
                 Entrar al panel de empresas
               </Link>

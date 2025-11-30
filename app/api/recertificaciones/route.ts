@@ -19,77 +19,140 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}))
 
     const {
+      certificacionId,
       trabajadorId,
       nombre,
-    }: { trabajadorId?: number | string; nombre?: string } = body ?? {}
+    }: {
+      certificacionId?: number | string
+      trabajadorId?: number | string
+      nombre?: string
+    } = body ?? {}
 
-    const trabajadorIdNum = Number(trabajadorId)
+    let trabajador: any = null
+    let empresa: any = null
+    let curso: string | null = null
+    let fechaVencStr = "N/A"
+    let nombreSolicitud = nombre ?? "Recertificación solicitada desde panel empresa"
 
-    if (!trabajadorIdNum || Number.isNaN(trabajadorIdNum)) {
-      return NextResponse.json(
-        { error: "Falta trabajadorId válido" },
-        { status: 400 }
-      )
-    }
+    // 🔹 MODO NUEVO: viene certificacionId desde el panel (acciones de empresas)
+    if (certificacionId) {
+      const certIdNum = Number(certificacionId)
+      if (!certIdNum || Number.isNaN(certIdNum)) {
+        return NextResponse.json(
+          { error: "certificacionId inválido" },
+          { status: 400 }
+        )
+      }
 
-    if (!nombre) {
-      return NextResponse.json(
-        { error: "Falta nombre del curso / recertificación" },
-        { status: 400 }
-      )
-    }
-
-    // 🔹 Buscamos trabajador + empresa + certificación más reciente
-    const trabajador = await prisma.trabajador.findUnique({
-      where: { id: trabajadorIdNum },
-      include: {
-        empresa: true,
-        certificaciones: {
-          orderBy: { fechaVencimiento: "desc" },
-          take: 1,
+      const cert = await prisma.certificacion.findUnique({
+        where: { id: certIdNum },
+        include: {
+          trabajador: {
+            include: {
+              empresa: true,
+            },
+          },
         },
-      },
-    })
+      })
 
-    if (!trabajador) {
-      return NextResponse.json(
-        { error: "Trabajador no encontrado" },
-        { status: 404 }
-      )
+      if (!cert || !cert.trabajador) {
+        return NextResponse.json(
+          { error: "Certificación o trabajador no encontrado" },
+          { status: 404 }
+        )
+      }
+
+      trabajador = cert.trabajador
+      empresa = cert.trabajador.empresa
+      curso = cert.curso
+
+      const fv = cert.fechaVencimiento
+      if (fv instanceof Date) {
+        fechaVencStr = fv.toISOString().slice(0, 10)
+      } else if (fv) {
+        fechaVencStr = String(fv).slice(0, 10)
+      }
+
+      // Si no viene nombre en el body, usamos este texto por defecto
+      if (!nombre) {
+        nombreSolicitud = "Recertificación solicitada desde el panel de empresas"
+      }
+    } else {
+      // 🔹 MODO LEGACY: se usa trabajadorId + nombre (por si lo llamas desde otro lado)
+      const trabajadorIdNum = Number(trabajadorId)
+
+      if (!trabajadorIdNum || Number.isNaN(trabajadorIdNum)) {
+        return NextResponse.json(
+          { error: "Falta trabajadorId válido" },
+          { status: 400 }
+        )
+      }
+
+      if (!nombre) {
+        return NextResponse.json(
+          { error: "Falta nombre del curso / recertificación" },
+          { status: 400 }
+        )
+      }
+
+      trabajador = await prisma.trabajador.findUnique({
+        where: { id: trabajadorIdNum },
+        include: {
+          empresa: true,
+          certificaciones: {
+            orderBy: { fechaVencimiento: "desc" },
+            take: 1,
+          },
+        },
+      })
+
+      if (!trabajador) {
+        return NextResponse.json(
+          { error: "Trabajador no encontrado" },
+          { status: 404 }
+        )
+      }
+
+      empresa = trabajador.empresa
+      const ultimaCert = trabajador.certificaciones[0] ?? null
+
+      curso = ultimaCert?.curso ?? nombre
+
+      const fv = ultimaCert?.fechaVencimiento
+      if (fv instanceof Date) {
+        fechaVencStr = fv.toISOString().slice(0, 10)
+      } else if (fv) {
+        fechaVencStr = String(fv).slice(0, 10)
+      }
+
+      nombreSolicitud = nombre
     }
-
-    const empresa = trabajador.empresa
-    const ultimaCert = trabajador.certificaciones[0] ?? null
 
     const empresaNombre = empresa?.nombre ?? "Empresa no registrada"
     const empresaEmail = empresa?.email ?? "N/A"
     const empresaRut = empresa?.rut ?? "N/A"
 
-    const trabajadorNombre = `${trabajador.nombre} ${trabajador.apellido ?? ""}`.trim()
-    const trabajadorRut = trabajador.rut
-    const centroTrabajo = trabajador.centroTrabajo ?? "N/A"
+    const trabajadorNombre = `${trabajador?.nombre ?? ""} ${trabajador?.apellido ?? ""}`.trim()
+    const trabajadorRut = trabajador?.rut ?? "N/A"
+    const centroTrabajo = trabajador?.centroTrabajo ?? "N/A"
 
-    const curso = ultimaCert?.curso ?? nombre
-    const fechaVencimiento =
-      ultimaCert?.fechaVencimiento instanceof Date
-        ? ultimaCert.fechaVencimiento.toISOString().slice(0, 10)
-        : ultimaCert?.fechaVencimiento
-        ? String(ultimaCert.fechaVencimiento).slice(0, 10)
-        : "N/A"
+    const cursoFinal = curso ?? "Curso no definido"
+    const fechaVencimiento = fechaVencStr
 
     // 🔹 Si no hay SMTP bien configurado → modo simulado (no rompe al cliente)
     if (!smtpHost || !smtpUser || !smtpPass) {
       console.warn("⚠️ /api/recertificaciones en modo SIMULADO (sin SMTP completo)")
       console.log({
-        trabajadorId: trabajadorIdNum,
+        certificacionId: certificacionId ?? null,
+        trabajadorId,
         trabajadorNombre,
         trabajadorRut,
         empresaNombre,
         empresaEmail,
         empresaRut,
-        curso,
+        curso: cursoFinal,
         fechaVencimiento,
-        nombreSolicitud: nombre,
+        nombreSolicitud,
       })
 
       return NextResponse.json({
@@ -125,9 +188,9 @@ export async function POST(req: Request) {
       `Centro de trabajo: ${centroTrabajo}`,
       ``,
       `=== DETALLE DE LA RECERTIFICACION ===`,
-      `Curso (última certificación registrada): ${curso}`,
+      `Curso (última certificación registrada): ${cursoFinal}`,
       `Vence: ${fechaVencimiento}`,
-      `Solicitud: ${nombre}`,
+      `Solicitud: ${nombreSolicitud}`,
       ``,
       `Fecha de solicitud: ${new Date().toLocaleString("es-CL")}`,
     ].join("\n")
@@ -150,9 +213,9 @@ export async function POST(req: Request) {
 
       <h3>Detalle de la recertificación</h3>
       <ul>
-        <li><strong>Curso (última certificación):</strong> ${curso}</li>
+        <li><strong>Curso (última certificación):</strong> ${cursoFinal}</li>
         <li><strong>Fecha de vencimiento:</strong> ${fechaVencimiento}</li>
-        <li><strong>Solicitud:</strong> ${nombre}</li>
+        <li><strong>Solicitud:</strong> ${nombreSolicitud}</li>
       </ul>
 
       <p>Fecha de solicitud: ${new Date().toLocaleString("es-CL")}</p>
