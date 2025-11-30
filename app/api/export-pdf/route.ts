@@ -447,14 +447,21 @@ export async function POST(req: NextRequest) {
 
     pages.push(page)
 
-    // Pie de página
+    // Pie de página (hora Chile)
     const now = new Date()
-    const fechaHora = now.toLocaleString('es-CL')
+    const fechaHora = now.toLocaleString("es-CL", {
+      timeZone: "America/Santiago",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
 
     pages.forEach((p, idx) => {
       const { width: pw } = p.getSize()
 
-      p.drawText(`Generado: ${fechaHora}`, {
+      p.drawText(`Generado: ${fechaHora} (hora Chile)`, {
         x: 40,
         y: 30,
         size: 9,

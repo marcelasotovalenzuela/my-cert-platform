@@ -68,23 +68,37 @@ function formatFecha(value: string | null): string {
 }
 
 function buildStatusTooltip(fechaVencimiento: string | null): string {
-  if (!fechaVencimiento) return "Sin fecha de vencimiento registrada.";
-
-  const d = new Date(fechaVencimiento);
-  if (Number.isNaN(d.getTime())) return "Fecha de vencimiento inválida.";
+  if (!fechaVencimiento) {
+    return "Sin fecha de vencimiento registrada.";
+  }
 
   const hoy = new Date();
-  const diffMs = d.getTime() - hoy.getTime();
-  const dias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  const fechaV = new Date(fechaVencimiento);
 
-  const fechaStr = d.toLocaleDateString("es-CL");
+  // Normalizamos ambas fechas a medianoche para contar días completos
+  hoy.setHours(0, 0, 0, 0);
+  fechaV.setHours(0, 0, 0, 0);
 
-  if (dias < 0) {
-    const diasAbs = Math.abs(dias);
-    if (diasAbs === 0) return `Venció hoy (${fechaStr}).`;
-    if (diasAbs === 1) return `Venció hace 1 día (${fechaStr}).`;
-    return `Venció hace ${diasAbs} días (${fechaStr}).`;
+  const diffMs = fechaV.getTime() - hoy.getTime();
+  const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDias > 0) {
+    // Aún no vence
+    if (diffDias === 1) {
+      return "Vence en 1 día";
+    }
+    return `Vence en ${diffDias} días`;
+  } else if (diffDias === 0) {
+    return "Vence hoy";
+  } else {
+    // Ya venció
+    const diasPasados = Math.abs(diffDias);
+    if (diasPasados === 1) {
+      return "Venció hace 1 día";
+    }
+    return `Venció hace ${diasPasados} días`;
   }
+}
 
   if (dias > 0) {
     if (dias === 1) return `Vence en 1 día (${fechaStr}).`;
