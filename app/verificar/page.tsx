@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 
 type ResultadoVerificacion = {
@@ -21,6 +21,16 @@ export default function VerificarPage() {
   const [resultado, setResultado] = useState<ResultadoVerificacion | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  // Prefill from URL (?codigo=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const codigoURL = params.get("codigo");
+    if (codigoURL) {
+      setCodigo(codigoURL);
+    }
+  }, []);
 
   const handleVerificar = async (e: React.FormEvent) => {
     e.preventDefault()
