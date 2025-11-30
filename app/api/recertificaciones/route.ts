@@ -1,5 +1,7 @@
 // app/api/recertificaciones/route.ts
-import { NextResponse } from "next/server"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import nodemailer from "nodemailer"
 
@@ -14,7 +16,7 @@ if (!smtpHost || !smtpUser || !smtpPass) {
   console.warn("⚠️ SMTP incompleto en /api/recertificaciones. Se usará modo simulado si se llama al endpoint.")
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
 

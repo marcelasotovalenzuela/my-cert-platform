@@ -218,7 +218,7 @@ export async function POST(req: NextRequest) {
         const maxWidth = col.width - 16 // padding horizontal dentro de la cabecera
         const lines = wrapTextByWidth(label, font, headerFontSize, maxWidth)
         const lineHeight = headerFontSize + 2
-        let lineY = y - 14
+        const lineY = y - 14
 
         lines.slice(0, 2).forEach((ln, idx) => {
           const textWidth = font.widthOfTextAtSize(ln, headerFontSize)
