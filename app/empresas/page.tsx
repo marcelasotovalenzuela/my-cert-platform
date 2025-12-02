@@ -132,7 +132,6 @@ function EmpresasPageInner() {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [alertSent, setAlertSent] = useState(false);
 
   const handleViewDiploma = (certId: number) => {
     window.open(`/api/diploma/${certId}`, "_blank", "noopener,noreferrer");
@@ -333,61 +332,6 @@ function EmpresasPageInner() {
     setPage(1);
   }, [filter, searchTerm, sortKey, sortDir]);
 
-  useEffect(() => {
-    if (!empresa) return;
-    if (!certificaciones.length) return;
-
-    // Evita múltiples envíos en el mismo ciclo de render
-    if (alertSent) return;
-
-    const criticasOAtencion = certificaciones
-      .map((cert) => {
-        const statusInfo = getStatusInfo(cert.fechaVencimiento);
-        return { cert, status: statusInfo.status };
-      })
-      .filter(
-        ({ status }) => status === "critico" || status === "atencion"
-      );
-
-    if (!criticasOAtencion.length) return;
-
-    // Clave por empresa + día, para no enviar la alerta cada vez que se loguean,
-    // sino como máximo 1 vez al día por empresa.
-    if (typeof window !== "undefined" && empresa.id) {
-      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-      const storageKey = `ryl_alert_estado_${empresa.id}_${today}`;
-      const alreadySent = window.localStorage.getItem(storageKey);
-      if (alreadySent === "1") {
-        return;
-      }
-
-      // Marcamos como enviado para esta empresa en este día
-      window.localStorage.setItem(storageKey, "1");
-    }
-
-    setAlertSent(true);
-
-    const payload = {
-      emailDestino: empresa.email,
-      empresaNombre: empresa.nombre,
-      certificaciones: criticasOAtencion.map(({ cert, status }) => ({
-        curso: cert.curso,
-        trabajadorNombre: `${cert.trabajadorNombre} ${cert.trabajadorApellido}`.trim(),
-        trabajadorRut: cert.trabajadorRut ?? "",
-        fechaVencimiento: cert.fechaVencimiento ?? "",
-        centroTrabajo: cert.centroTrabajo ?? "",
-        estado: status === "critico" ? "Crítico" : "En atención",
-      })),
-    };
-
-    fetch("/api/alertas/estado-certificaciones", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }).catch((err) => {
-      console.error("Error al enviar alerta de estado:", err);
-    });
-  }, [empresa, certificaciones, alertSent]);
 
   const stats: DashboardStats = useMemo(
     () => getDashboardStats(certificaciones),

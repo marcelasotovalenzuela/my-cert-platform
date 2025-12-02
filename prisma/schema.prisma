@@ -44,6 +44,8 @@ model Certificacion {
 
   // 👇 importante: ? + @map("codigo_verificacion")
   codigoVerificacion String? @unique @default(cuid()) @map("codigo_verificacion")
+  alertaEnAtencionEnviada Boolean @default(false)
+  alertaCriticoEnviada     Boolean @default(false)
 
   trabajador       Trabajador @relation(fields: [trabajadorId], references: [id])
 

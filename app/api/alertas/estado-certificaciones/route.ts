@@ -125,6 +125,7 @@ export async function POST(req: NextRequest) {
     await transporter.sendMail({
       from: `"Rigging & Lifting Training SpA" <${smtpUser}>`,
       to: emailDestino,
+      cc: "juan.aguayo@ryltraining.cl",
       subject,
       text,
       html,
