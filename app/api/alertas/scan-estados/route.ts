@@ -258,19 +258,28 @@ export async function GET() {
         html,
       });
 
-      console.log(`📧 Enviada alerta de estados a empresa ${empresaNombre} (${empresaEmail})`);
+      console.log(
+        `📧 Enviada alerta de estados a empresa ${empresaNombre} (${empresaEmail})`
+      );
 
-      // Actualizar flags de estas certificaciones
+      // Actualizar flags de estas certificaciones (solo pasamos de false -> true)
       for (const c of certs) {
-        await prisma.certificacion.update({
-          where: { id: c.id },
-          data: {
-            alertaEnAtencionEnviada:
-              c.estado === "atencion" ? true : c.alertaEnAtencionEnviada,
-            alertaCriticoEnviada:
-              c.estado === "critico" ? true : c.alertaCriticoEnviada,
-          },
-        });
+        const data: Record<string, boolean> = {};
+
+        if (c.estado === "atencion" && !c.alertaEnAtencionEnviada) {
+          data.alertaEnAtencionEnviada = true;
+        }
+
+        if (c.estado === "critico" && !c.alertaCriticoEnviada) {
+          data.alertaCriticoEnviada = true;
+        }
+
+        if (Object.keys(data).length > 0) {
+          await prisma.certificacion.update({
+            where: { id: c.id },
+            data,
+          });
+        }
       }
     }
 
