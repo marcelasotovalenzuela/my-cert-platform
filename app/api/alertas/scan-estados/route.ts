@@ -258,6 +258,7 @@ export async function GET() {
         html,
       });
 
+      console.log("🔍 CERTIFICACIONES QUE SE VAN A ACTUALIZAR:", certs.map(c => ({ id: c.id, estado: c.estado })));
       console.log(
         `📧 Enviada alerta de estados a empresa ${empresaNombre} (${empresaEmail})`
       );
@@ -274,11 +275,13 @@ export async function GET() {
           data.alertaCriticoEnviada = true;
         }
 
+        console.log("⚠️ Intentando actualizar ID:", c.id, "con", data);
         if (Object.keys(data).length > 0) {
           await prisma.certificacion.update({
             where: { id: c.id },
             data,
           });
+          console.log("✅ UPDATE OK en certificación ID:", c.id);
         }
       }
     }
