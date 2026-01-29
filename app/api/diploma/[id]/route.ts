@@ -136,9 +136,15 @@ export async function GET(
     font: fontBold,
   });
 
-  const fechaCapacitacion = new Date(
-    cert.fechaEmision
-  ).toLocaleDateString("es-CL");
+  let fechaCapacitacion = "—";
+
+  if (cert.fechaEmision) {
+    const d = new Date(cert.fechaEmision as any);
+    if (!isNaN(d.getTime())) {
+      fechaCapacitacion = d.toLocaleDateString("es-CL");
+    }
+  }
+
   const textFecha = `Capacitación realizada el: ${fechaCapacitacion}`;
   const textFechaWidth = fontRegular.widthOfTextAtSize(textFecha, 11);
   page.drawText(textFecha, {
